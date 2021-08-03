@@ -1,0 +1,62 @@
+---------------------------------- Sample Code in Hive --------------------------------------------------------
+
+--creating table
+create table olympic(video_id string, 
+uploader string, intervals int, 
+category string, length_video int, 
+views int, rating float, no_ratings int, 
+comments int, relative_video string) 
+row format delimited fields terminated by ',';
+
+--rename table
+alter table olympic rename to youtube;
+
+
+
+--youtube usecase--------------------------------------------------------------------------------------------------------------------
+1.Find out the top 5 categories with maximum number of videos uploaded.
+select category, count(video_id) as no_of_videos from youtube group by category order by no_of_videos desc limit 5;
+
+2.Find out the most viewed videos
+select *  from youtube order by views desc limit 1;
+
+3.Find out the top 10 rated videos 
+select * from youtube order by no_ratings desc limit 10; 
+
+
+
+------uber usecase----------------------------------------------------------------------------------------------------------------------
+create table uber(dispatching_base_number VARCHAR(6), TRAVEL_dATE varchar(10), active_vehicles INT ,trips INT) row format delimited fields terminated by ',' tblproperties ("skip.header.line.count"="1");
+
+describe uber; --to describe uber
+
+load data local inpath '/home/hadoop/Downloads/uber.txt' into table uber;  --loading data from LFS to Hive table
+
+select count(*) from uber;
+select * from uber limit 5;
+
+drop table uber;
+
+select IF (substring('2/20/2015',4,1)=='/',TRUE,FALSE); --checking whether date(20) is single digit or double digit
+
+select IF(substring(travel_date,4,1)=='/',substring(travel_date,3,1),substring(travel_date,3,2)) from uber; -- to print date (20) alone from string like '2/20/2015'
+
+1. Find out the number of vehicles used with respect to every month
+select substring(travel_date,1,1) , sum(active_vehicles) from uber group by substring(travel_date,1,1) 
+
+2.Find out the maximum number of trips happened with respect to every basement
+select dispatching_base_number, sum(trips) as 'number_of_trips' from uber group by dispatching_base_number;
+
+3. date where most number of vehicles are used
+select travel_date,  sum(active_vehicles) as no_of_vehicles from uber group by travel_date order by no_of_vehicles desc limit 1;  --whole date field as o/p
+select IF(substring(travel_date,4,1)=='/', substring(travel_date,3,1), substring(travel_date,3,2)), sum(active_vehicles) as no_of_vehicles from uber group by travel_date order by no_of_vehicles desc limit 1;  --printing date of month alone from whole date field
+
+========================================================================================================================================================
+
+
+
+
+SQL vs Hive
+-----------
+select top 1 travel_date,  sum(active_vehicles) as 'no. of vehicles'  from uber group by travel_date order by sum(active_vehicles) desc     (SQL)
+select travel_date,  sum(active_vehicles) as no_of_vehicles from uber group by travel_date order by no_of_vehicles desc limit 1             (Hive)
