@@ -1,0 +1,136 @@
+--it's a bad practice to use collect
+
+
+Use cases - Building & HVAC
+Building.csv has the details of each Building and its Country details. 
+HVAC.csv has the TargetTemp and ActualTemp for each building recorded at different time and date.
+We have to find the 2 Countries which has the most 'High Temperature Differences (TargetTemp-ActualTemp >5 or <-5)' recorded in their Buildings. 
+================================================================================================================================================
+
+sc.textFile("/home/hadoop/Lino/building.csv").foreach(println)
+BuildingID,BuildingMgr,BuildingAge,HVACproduct,Country
+1,M1,25,AC1000,USA
+2,M2,27,FN39TG,France
+3,M3,28,JDNS77,Brazil
+4,M4,17,GG1919,Finland
+5,M5,3,ACMAX22,Hong Kong
+6,M6,9,AC1000,Singapore
+7,M7,13,FN39TG,South Africa
+8,M8,25,JDNS77,Australia
+9,M9,11,GG1919,Mexico
+10,M10,23,ACMAX22,China
+11,M11,14,AC1000,Belgium
+12,M12,26,FN39TG,Finland
+13,M13,25,JDNS77,Saudi Arabia
+14,M14,17,GG1919,Germany
+15,M15,19,ACMAX22,Israel
+16,M16,23,AC1000,Turkey
+17,M17,11,FN39TG,Egypt
+18,M18,25,JDNS77,Indonesia
+19,M19,14,GG1919,Canada
+20,M20,19,ACMAX22,Argentina
+
+sc.textFile("/home/hadoop/Lino/HVAC.csv").count
+res4: Long = 8002
+
+val build_header=sc.textFile("/home/hadoop/Lino/building.csv").first()
+build_header: String = BuildingID,BuildingMgr,BuildingAge,HVACproduct,Country
+
+val build_data=sc.textFile("/home/hadoop/Lino/building.csv").filter(x=>x!=build_header)
+
+build_data.collect --including last empty row
+Array[String] = Array(1,M1,25,AC1000,USA, 2,M2,27,FN39TG,France, 3,M3,28,JDNS77,Brazil, 4,M4,17,GG1919,Finland, 5,M5,3,ACMAX22,Hong Kong, 6,M6,9,AC1000,Singapore, 7,M7,13,FN39TG,South Africa, 8,M8,25,JDNS77,Australia, 9,M9,11,GG1919,Mexico, 10,M10,23,ACMAX22,China, 11,M11,14,AC1000,Belgium, 12,M12,26,FN39TG,Finland, 13,M13,25,JDNS77,Saudi Arabia, 14,M14,17,GG1919,Germany, 15,M15,19,ACMAX22,Israel, 16,M16,23,AC1000,Turkey, 17,M17,11,FN39TG,Egypt, 18,M18,25,JDNS77,Indonesia, 19,M19,14,GG1919,Canada, 20,M20,19,ACMAX22,Argentina, "")
+
+build_data.map(x=>x.split(",")).collect
+res6: Array[Array[String]] = Array(Array(1, M1, 25, AC1000, USA), Array(2, M2, 27, FN39TG, France), Array(3, M3, 28, JDNS77, Brazil), Array(4, M4, 17, GG1919, Finland), Array(5, M5, 3, ACMAX22, Hong Kong), Array(6, M6, 9, AC1000, Singapore), Array(7, M7, 13, FN39TG, South Africa), Array(8, M8, 25, JDNS77, Australia), Array(9, M9, 11, GG1919, Mexico), Array(10, M10, 23, ACMAX22, China), Array(11, M11, 14, AC1000, Belgium), Array(12, M12, 26, FN39TG, Finland), Array(13, M13, 25, JDNS77, Saudi Arabia), Array(14, M14, 17, GG1919, Germany), Array(15, M15, 19, ACMAX22, Israel), Array(16, M16, 23, AC1000, Turkey), Array(17, M17, 11, FN39TG, Egypt), Array(18, M18, 25, JDNS77, Indonesia), Array(19, M19, 14, GG1919, Canada), Array(20, M20, 19, ACMAX22, Argentina), Array(""))
+
+val build_Country = build_data.filter(x=>x.contains(",")).map(x=>x.split(",")).map(x=>(x(0),x(4))) --first filter removes last empty row
+
+build_Country.take(3) --x(0) is BuildingID
+res21: Array[(String, String)] = Array((1,USA), (2,France), (3,Brazil))
+
+build_Country.collect 		--(BuildingID, Country)
+res5: Array[(String, String)] = Array((1,USA), (2,France), (3,Brazil), (4,Finland), (5,Hong Kong), (6,Singapore), (7,South Africa), (8,Australia), (9,Mexico), (10,China), (11,Belgium), (12,Finland), (13,Saudi Arabia), (14,Germany), (15,Israel), (16,Turkey), (17,Egypt), (18,Indonesia), (19,Canada), (20,Argentina))
+
+
+
+
+--Handling HVAC.csv file
+scala> sc.textFile("/home/hadoop/Lino/HVAC.csv").take(4).foreach(println)
+Date,Time,TargetTemp,ActualTemp,System,SystemAge,BuildingID
+01-06-2013,00:00:01,66,58,13,20,4
+02-06-2013,01:00:01,69,68,3,20,17
+03-06-2013,02:00:01,70,73,17,20,18
+
+sc.textFile("/home/hadoop/Lino/HVAC.csv").count()
+res0: Long = 8002  --Including header and an empty line at the end
+
+val hvac_header=sc.textFile("/home/hadoop/Lino/HVAC.csv").first() --taking only the first row as header
+hvac_header: String = Date,Time,TargetTemp,ActualTemp,System,SystemAge,BuildingID
+
+val hvac_data = sc.textFile("/home/hadoop/Lino/HVAC.csv").filter(x=>x!=hvac_header)  --removing header
+
+hvac_data.take(3)
+res5: Array[String] = Array(01-06-2013,00:00:01,66,58,13,20,4, 02-06-2013,01:00:01,69,68,3,20,17, 03-06-2013,02:00:01,70,73,17,20,18)  --printing top 3 rows
+
+hvac_data.map(x=>x.split(",")).take(3)
+res6: Array[Array[String]] = Array(Array(01-06-2013, 00:00:01, 66, 58, 13, 20, 4), Array(02-06-2013, 01:00:01, 69, 68, 3, 20, 17), Array(03-06-2013, 02:00:01, 70, 73, 17, 20, 18))
+
+hvac_data.map(x=>x.split(",")).filter(x=>x(0).contains("-")).count()	--after removing both header and last row 
+res28: Long = 8000
+
+val hvac_tempDiff = hvac_data.map(x=>x.split(",")).filter(x=>x(0).contains("-")).map(x=>(x(6),x(2).toInt-x(3).toInt))    
+--x(6) is the BuildingID and x(2)-x(3) is the TargetTemp-ActualTemp
+
+hvac_tempDiff.take(2)
+res30: Array[(String, Int)] = Array((4,8), (17,1))
+
+--TargetTemp-ActualTemp>5
+hvac_tempDiff.filter(x=>x._2>5).collect
+res33: Array[(String, Int)] = Array((4,8), (4,11), (2,12), (12,8), (7,7), (20,8), (8,9), (6,10), (13,9), (4,11), (7,12), (6,6), (15,9), (5,7), (18,9), (4,11), (14,10), (20,7), (7,7), (9,10), (18,8), (6,10), (6,13), (12,12), (19,15), (19,12), (14,14), (20,13), (12,8), (10,14), (3,8), (3,6), (6,6), (2,9), (7,9), (11,9), (13,7), (4,9), (7,7), (6,10), (14,15), (1,7), (10,8), (17,9), (2,10), (20,7), (9,6), (20,9), (5,9), (4,7), (17,11), (3,8), (7,13), (11,8), (17,7), (11,6), (6,6), (3,11), (1,9), (16,11), (2,6), (6,11), (14,8), (5,9), (1,7), (4,10), (8,11), (9,11), (9,11), (19,13), (16,13), (2,6), (9,14), (1,8), (17,14), (13,10), (13,10), (1,6), (15,6), (1,12), (15,9), (10,6), (18,12), (17,8), (16,14), (15,7), (10,11), (5,11), (6,12), (9,8), (4,11), (1,6), (8,8), (20,8), (18,11), (16,6), (16...
+
+--TargetTemp-ActualTemp<-5
+hvac_tempDiff.filter(x=>x._2<(-5)).collect
+res2: Array[(String, Int)] = Array((3,-6), (13,-11), (10,-8), (2,-6), (10,-10), (6,-12), (5,-7), (9,-8), (2,-6), (12,-9), (18,-11), (7,-10), (12,-7), (9,-6), (10,-12), (11,-7), (14,-7), (2,-8), (12,-10), (6,-6), (16,-6), (14,-9), (2,-7), (13,-7), (7,-6), (9,-10), (9,-9), (15,-10), (7,-12), (13,-10), (11,-9), (17,-10), (9,-15), (14,-9), (16,-7), (15,-12), (19,-11), (2,-9), (6,-6), (19,-10), (19,-12), (7,-12), (4,-8), (1,-7), (17,-12), (16,-11), (4,-11), (19,-6), (20,-9), (18,-6), (10,-11), (9,-13), (9,-12), (5,-11), (6,-7), (12,-13), (8,-7), (12,-6), (5,-11), (17,-7), (8,-12), (20,-12), (1,-12), (3,-8), (16,-9), (8,-6), (3,-9), (3,-11), (17,-12), (11,-10), (13,-9), (9,-10), (12,-10), (13,-6), (5,-10), (9,-9), (12,-7), (19,-7), (2,-10), (19,-10), (11,-10), (10,-9), (13,-8), (8,-10), (1,-1...
+
+--TargetTemp-ActualTemp>5 or TargetTemp-ActualTemp<-5
+hvac_tempDiff.filter(x=>x._2>5 || x._2<(-5)).collect    --(BuildingID, TempDiff)
+res35: Array[(String, Int)] = Array((4,8), (3,-6), (4,11), (2,12), (12,8), (7,7), (20,8), (8,9), (6,10), (13,9), (4,11), (7,12), (6,6), (15,9), (13,-11), (5,7), (18,9), (10,-8), (2,-6), (10,-10), (6,-12), (5,-7), (4,11), (9,-8), (2,-6), (12,-9), (14,10), (20,7), (18,-11), (7,7), (9,10), (7,-10), (12,-7), (18,8), (6,10), (9,-6), (10,-12), (11,-7), (14,-7), (2,-8), (12,-10), (6,13), (12,12), (19,15), (19,12), (6,-6), (16,-6), (14,14), (20,13), (14,-9), (2,-7), (12,8), (13,-7), (7,-6), (9,-10), (9,-9), (15,-10), (7,-12), (13,-10), (10,14), (3,8), (3,6), (11,-9), (17,-10), (9,-15), (14,-9), (6,6), (2,9), (7,9), (16,-7), (15,-12), (11,9), (13,7), (19,-11), (4,9), (7,7), (6,10), (2,-9), (6,-6), (14,15), (1,7), (10,8), (17,9), (19,-10), (2,10), (20,7), (9,6), (20,9), (5,9), (19,-12), (4,7), (7...
+
+
+--Joining 2 RDDs
+var joinedRDDS = hvac_tempDiff.filter(x=>x._2>5 || x._2<(-5)).join(build_Country)
+
+joinedRDDS.take(3)
+res8: Array[(String, (Int, String))] = Array((4,(8,Finland)), (4,(11,Finland)), (4,(11,Finland)))
+
+joinedRDDS.collect
+res9: Array[(String, (Int, String))] = Array((4,(8,Finland)), (4,(11,Finland)), (4,(11,Finland)), (4,(11,Finland)), (4,(9,Finland)), (4,(7,Finland)), (4,(-8,Finland)), (4,(-11,Finland)), (4,(10,Finland)), (4,(-6,Finland)), (4,(11,Finland)), (4,(-11,Finland)), (4,(8,Finland)), (4,(-7,Finland)), (4,(-13,Finland)), (4,(15,Finland)), (4,(-7,Finland)), (4,(-7,Finland)), (4,(8,Finland)), (4,(-14,Finland)), (4,(-10,Finland)), (4,(7,Finland)), (4,(9,Finland)), (4,(7,Finland)), (4,(-6,Finland)), (4,(8,Finland)), (4,(-7,Finland)), (4,(12,Finland)), (4,(11,Finland)), (4,(6,Finland)), (4,(14,Finland)), (4,(-8,Finland)), (4,(-9,Finland)), (4,(-7,Finland)), (4,(-6,Finland)), (4,(-9,Finland)), (4,(10,Finland)), (4,(6,Finland)), (4,(-8,Finland)), (4,(-13,Finland)), (4,(6,Finland)), (4,(-11,Finland)), (...
+
+joinedRDDS.groupBy(x=>x._2._2).collect  --grouping by Country Name
+res12: Array[(String, Iterable[(String, (Int, String))])] = Array((Australia,CompactBuffer((8,(9,Australia)), (8,(11,Australia)), (8,(-7,Australia)), (8,(-12,Australia)), (8,(-6,Australia)), (8,(-10,Australia)), (8,(-8,Australia)), (8,(-11,Australia)), (8,(8,Australia)), (8,(14,Australia)), (8,(-8,Australia)), (8,(9,Australia)), (8,(-10,Australia)), (8,(-9,Australia)), (8,(-8,Australia)), (8,(-12,Australia)), (8,(6,Australia)), (8,(6,Australia)), (8,(7,Australia)), (8,(-8,Australia)), (8,(10,Australia)), (8,(6,Australia)), (8,(-9,Australia)), (8,(-7,Australia)), (8,(-9,Australia)), (8,(13,Australia)), (8,(-6,Australia)), (8,(6,Australia)), (8,(13,Australia)), (8,(-9,Australia)), (8,(-7,Australia)), (8,(-11,Australia)), (8,(7,Australia)), (8,(-7,Australia)), (8,(11,Australia)), (8,(6,Aus...
+
+joinedRDDS.groupBy(x=>x._2._2).map(x=>(x._1,x._2.toList.length)).collect
+res15: Array[(String, Int)] = Array((Australia,225), (Argentina,230), (Brazil,226), (Canada,232), (Mexico,228), (Belgium,199), (France,251), (China,241), (Finland,473), (Germany,196), (Singapore,230), (USA,213), (Hong Kong,248), (South Africa,237), (Egypt,236), (Indonesia,243), (Turkey,243), (Israel,232), (Saudi Arabia,233))
+
+joinedRDDS.groupBy(x=>x._2._2).map(x=>(x._1,x._2.toList.length)).sortBy(x=>x._2,false).collect
+res17: Array[(String, Int)] = Array((Finland,473), (France,251), (Hong Kong,248), (Indonesia,243), (Turkey,243), (China,241), (South Africa,237), (Egypt,236), (Saudi Arabia,233), (Canada,232), (Israel,232), (Argentina,230), (Singapore,230), (Mexico,228), (Brazil,226), (Australia,225), (USA,213), (Belgium,199), (Germany,196))
+
+joinedRDDS.groupBy(x=>x._2._2).map(x=>(x._1,x._2.toList.length)).sortBy(x=>x._2,false).take(2)
+res18: Array[(String, Int)] = Array((Finland,473), (France,251))
+
+
+
+--Count the number of buildings with 'High Temperature Differences (TargetTemp-ActualTemp >5 or <-5)' 
+val country_build=joinedRDDS.groupBy(x=>x._2._2).map(x=>(x._1,x._2.toList.length)).sortBy(x=>x._2,false)
+
+country_build.map(x=>x._2).collect
+res22: Array[Int] = Array(473, 251, 248, 243, 243, 241, 237, 236, 233, 232, 232, 230, 230, 228, 226, 225, 213, 199, 196)
+
+scala> country_build.map(x=>x._2).sum()
+res23: Double = 4616.0
+
+
+
+
+

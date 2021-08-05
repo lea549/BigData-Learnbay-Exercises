@@ -1,0 +1,177 @@
+--it's a bad practice to use collect
+
+val a = sc.textFile("/home/hadoop/Python--Hadoop/Assign2/transactions") --this is an LFS location
+
+---------------------Action Commands-------------------------------------------------------------------------------------------------------
+scala> a.collect
+res24: Array[String] = Array(0001,01-20-2013,400100,100,Exercise & Fitness,clarksville,credit, 0002,02-22-2013,400100,2000,Exercise & Fitness,clarksville,credit, 0003,03-07-2013,400212,300,Exercise & Fitness,long beach,cash, 0005,05-11-2013,400104,450,Exercise & Fitness,clarksville,cash, 0007,03-15-2013,400212,1374,Outdoor Recreation,charleston,credit, 0008,04-08-2013,400327,415,Water Sports,columbus,credit, 0010,11-19-2013,400978,421,Team Sports,Petersburg,credit, 0011,11-09-2013,400743,279,Combat sports,Reno,credit, 0012,12-23-2013,400743,123,Jumping,columbus,cash, 0013,12-27-2013,400527,500,Water Sports,columbus,credit, 0014,07-14-2013,400743,212,Exercise & Fitness,Honolulu,credit, 0016,08-30-2013,400078,103,Water Sports,Honolulu,credit, 0017,09-29-2013,400428,20,Gymnastics,Columbia,...
+
+scala> a.foreach(println)
+0001,01-20-2013,400100,100,Exercise & Fitness,clarksville,credit
+0002,02-22-2013,400100,2000,Exercise & Fitness,clarksville,credit
+0003,03-07-2013,400212,300,Exercise & Fitness,long beach,cash
+0005,05-11-2013,400104,450,Exercise & Fitness,clarksville,cash
+0007,03-15-2013,400212,1374,Outdoor Recreation,charleston,credit
+0008,04-08-2013,400327,415,Water Sports,columbus,credit
+0010,11-19-2013,400978,421,Team Sports,Petersburg,credit
+0011,11-09-2013,400743,279,Combat sports,Reno,credit
+0012,12-23-2013,400743,123,Jumping,columbus,cash
+0013,12-27-2013,400527,500,Water Sports,columbus,credit
+0014,07-14-2013,400743,212,Exercise & Fitness,Honolulu,credit
+0016,08-30-2013,400078,103,Water Sports,Honolulu,credit
+0017,09-29-2013,400428,20,Gymnastics,Columbia,cash
+0018,06-13-2013,400428,234,Exercise & Fitness,Omaha,credit
+0019,05-21-2013,400675,120,Team Sports,Petersburg,cash
+0020,02-12-2013,400428,200,puzzles,New York,credit
+
+a.take(3)  --Array(firstline, secondline, thirdline)
+Array[String] = 
+Array(0001,01-20-2013,400100,100,Exercise & Fitness,clarksville,credit, 0002,02-22-2013,400100,2000,Exercise & Fitness,clarksville,credit, 0003,03-07-2013,400212,300,Exercise & Fitness,long beach,cash)
+
+a.map(x=>x.split(",")).collect
+res13: Array[Array[String]] = 
+Array(
+Array(0001, 01-20-2013, 400100, 100, Exercise & Fitness, clarksville, credit), 
+Array(0002, 02-22-2013, 400100, 2000, Exercise & Fitness, clarksville, credit), 
+Array(0003, 03-07-2013, 400212, 300, Exercise & Fitness, long beach, cash), 
+Array(0005, 05-11-2013, 400104, 450, Exercise & Fitness, clarksville, cash), 
+Array(0007, 03-15-2013, 400212, 1374, Outdoor Recreation, charleston, credit), 
+Array(0008, 04-08-2013, 400327, 415, Water Sports, columbus, credit), 
+Array(0010, 11-19-2013, 400978, 421, Team Sports, Petersburg, credit), 
+Array(0011, 11-09-2013, 400743, 279, Combat sports, Reno, credit), 
+Array(0012, 12-23-2013, 400743, 123, Jumping, columbus, cash), 
+Array(0013, 12-27-2013, 400527, 500, Water Sports, columbus, credit), 
+Array(0014, 07-14-2013, 40074...
+
+a.map(x=>x.split(",")).map(x=>(x(6),x(3).toInt)).collect
+res15: Array[(String, Int)] = 
+Array(
+(credit,100), (credit,2000), (cash,300), (cash,450), (credit,1374), (credit,415), (credit,421), (credit,279), (cash,123), (credit,500), (credit,212), (credit,103), (cash,20), (credit,234), (cash,120), (credit,200))
+
+a.map(x=>x.split(",")).map(x=>(x(6),x(3).toInt)).groupByKey().collect
+res8: Array[(String, Iterable[Int])] = 
+Array(
+(cash,CompactBuffer(300, 450, 123, 20, 120)), 
+(credit,CompactBuffer(100, 2000, 1374, 415, 421, 279, 500, 212, 103, 234, 200)))
+
+val tran3=a.map(x=>x.split(",")).map(x=>(x(6),x(3).toInt)).groupByKey().map(a=>(a._1,a._2.sum))
+
+tran3.collect
+res25: Array[(String, Int)] = Array((cash,1013), (credit,5838))
+
+a.map(x=>x.split(",")).map(x=>(x(6),x(3).toInt)).filter(x=>x._1.contains("cash")).collect
+res27: Array[(String, Int)] = Array((cash,300), (cash,450), (cash,123), (cash,20), (cash,120))
+
+val cash_count=a.map(x=>x.split(",")).map(x=>(x(6),x(3).toInt)).filter(x=>x._1.contains("cash")).count
+cash_count: Long = 5
+
+val credit_count=a.map(x=>x.split(",")).map(x=>(x(6),x(3).toInt)).filter(x=>x._1.contains("credit")).count
+credit_count: Long = 11
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+Use cases - Transactions
+===============================================================================================================================================
+1.Find the average spent on purchase using the cash and credit payment method
+
+val cash_count=a.map(x=>x.split(",")).map(x=>(x(6),x(3).toInt)).filter(x=>x._1.contains("cash")).count
+cash_count: Long = 5
+val cash_total= a.map(x=>x.split(",")).map(x=>(x(6),x(3).toInt)).filter(x=>x._1.contains("cash")).map(x=>x._2).sum()
+cash_total: Double = 1013.0
+print((cash_total/cash_count).toInt)
+202
+
+val credit_count=a.map(x=>x.split(",")).map(x=>(x(6),x(3).toInt)).filter(x=>x._1.contains("credit")).count
+credit_count: Long = 11
+val credit_total= a.map(x=>x.split(",")).map(x=>(x(6),x(3).toInt)).filter(x=>x._1.contains("credit")).map(x=>x._2).sum()
+credit_total: Double = 5838.0
+print((credit_total/credit_count).toInt)
+530
+----------------------------------------------------------------------------------------------------------------------------
+
+
+2. Find out the month of the year 2013 where most of the transactions happened.
+
+a.map(x=>x.split(",")).filter(x=>x(1).contains("2013")).collect --filtering only the records for 2013
+res28: Array[Array[String]] = Array(Array(0001, 01-20-2013, 400100, 100, Exercise & Fitness, clarksville, credit), Array(0002, 02-22-2013, 400100, 2000, Exercise & Fitness, clarksville, credit), Array(0003, 03-07-2013, 400212, 300, Exercise & Fitness, long beach, cash), Array(0005, 05-11-2013, 400104, 450, Exercise & Fitness, clarksville, cash), Array(0007, 03-15-2013, 400212, 1374, Outdoor Recreation, charleston, credit), Array(0008, 04-08-2013, 400327, 415, Water Sports, columbus, credit), Array(0010, 11-19-2013, 400978, 421, Team Sports, Petersburg, credit), Array(0011, 11-09-2013, 400743, 279, Combat sports, Reno, credit), Array(0012, 12-23-2013, 400743, 123, Jumping, columbus, cash), Array(0013, 12-27-2013, 400527, 500, Water Sports, columbus, credit), Array(0014, 07-14-2013, 40074...
+
+val month_trans = a.map(x=>x.split(",")).filter(x=>x(1).contains("2013")).map(x=>(x(1).substring(0,2),x(3).toInt)) --filtering only the month and Transaction
+
+month_trans.collect  
+res32: Array[(String, String)] = Array((01,100), (02,2000), (03,300), (05,450), (03,1374), (04,415), (11,421), (11,279), (12,123), (12,500), (07,212), (08,103), (09,20), (06,234), (05,120), (02,200))
+
+month_trans.reduceByKey((x,y)=>(x+y)).collect
+res34: Array[(String, Int)] = Array((06,234), (09,20), (02,2200), (04,415), (03,1674), (07,212), (12,623), (05,570), (11,700), (01,100), (08,103))
+
+month_trans.reduceByKey((x,y)=>(x+y)).sortBy(x=>x._2,false).take(2)
+res35: Array[(String, Int)] = Array((02,2200), (03,1674))
+------------------------------------------------------------------------------------------------------------------------------
+
+
+
+3.Find out the city where the transactions happened with least amount.
+
+a.map(x=>x.split(",")).map(x=>(x(5),x(3))).collect
+res37: Array[(String, String)] = Array((clarksville,100), (clarksville,2000), (long beach,300), (clarksville,450), (charleston,1374), (columbus,415), (Petersburg,421), (Reno,279), (columbus,123), (columbus,500), (Honolulu,212), (Honolulu,103), (Columbia,20), (Omaha,234), (Petersburg,120), (New York,200))
+
+a.map(x=>x.split(",")).map(x=>(x(5),x(3).toInt)).reduceByKey((x,y)=>(x+y)).collect
+res43: Array[(String, Int)] = Array((long beach,300), (Petersburg,541), (Reno,279), (charleston,1374), (New York,200), (Omaha,234), (Honolulu,315), (clarksville,2550), (Columbia,20), (columbus,1038))                                                                                  ^
+
+scala> a.map(x=>x.split(",")).map(x=>(x(5),x(3).toInt)).reduceByKey((x,y)=>(x+y)).sortBy(x=>x._2).collect
+res45: Array[(String, Int)] = Array((Columbia,20), (New York,200), (Omaha,234), (Reno,279), (long beach,300), (Honolulu,315), (Petersburg,541), (columbus,1038), (charleston,1374), (clarksville,2550))
+
+scala> a.map(x=>x.split(",")).map(x=>(x(5),x(3).toInt)).reduceByKey((x,y)=>(x+y)).sortBy(x=>x._2).take(1)
+res46: Array[(String, Int)] = Array((Columbia,20))
+
+scala> a.map(x=>x.split(",")).map(x=>(x(5),x(3).toInt)).reduceByKey((x,y)=>(x+y)).sortBy(x=>x._2).take(1).map(x=>x._1)
+res47: Array[String] = Array(Columbia)
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+4. List down the top 2 products category which has the maximum sales.
+
+a.map(x=>x.split(",")).collect
+res50: Array[Array[String]] = Array(Array(0001, 01-20-2013, 400100, 100, Exercise & Fitness, clarksville, credit), Array(0002, 02-22-2013, 400100, 2000, Exercise & Fitness, clarksville, credit), Array(0003, 03-07-2013, 400212, 300, Exercise & Fitness, long beach, cash), Array(0005, 05-11-2013, 400104, 450, Exercise & Fitness, clarksville, cash), Array(0007, 03-15-2013, 400212, 1374, Outdoor Recreation, charleston, credit), Array(0008, 04-08-2013, 400327, 415, Water Sports, columbus, credit), Array(0010, 11-19-2013, 400978, 421, Team Sports, Petersburg, credit), Array(0011, 11-09-2013, 400743, 279, Combat sports, Reno, credit), Array(0012, 12-23-2013, 400743, 123, Jumping, columbus, cash), Array(0013, 12-27-2013, 400527, 500, Water Sports, columbus, credit), Array(0014, 07-14-2013, 40074...
+
+scala> a.map(x=>x.split(",")).map(x=>(x(4),x(3).toInt)).collect
+res52: Array[(String, Int)] = Array((Exercise & Fitness,100), (Exercise & Fitness,2000), (Exercise & Fitness,300), (Exercise & Fitness,450), (Outdoor Recreation,1374), (Water Sports,415), (Team Sports,421), (Combat sports,279), (Jumping,123), (Water Sports,500), (Exercise & Fitness,212), (Water Sports,103), (Gymnastics,20), (Exercise & Fitness,234), (Team Sports,120), (puzzles,200))
+
+scala> a.map(x=>x.split(",")).map(x=>(x(4),x(3).toInt)).reduceByKey((x,y)=>(x+y)).collect
+res54: Array[(String, Int)] = Array((Outdoor Recreation,1374), (Jumping,123), (Combat sports,279), (Team Sports,541), (Water Sports,1018), (Gymnastics,20), (Exercise & Fitness,3296), (puzzles,200))                                                                                  
+
+scala> a.map(x=>x.split(",")).map(x=>(x(4),x(3).toInt)).reduceByKey((x,y)=>(x+y)).sortBy(x=>x._2).collect
+res56: Array[(String, Int)] = Array((Gymnastics,20), (Jumping,123), (puzzles,200), (Combat sports,279), (Team Sports,541), (Water Sports,1018), (Outdoor Recreation,1374), (Exercise & Fitness,3296))
+
+a.map(x=>x.split(",")).map(x=>(x(4),x(3).toInt)).reduceByKey((x,y)=>(x+y)).sortBy(x=>x._2,false).take(2) --taking in descending order
+res61: Array[(String, Int)] = Array((Exercise & Fitness,3296), (Outdoor Recreation,1374))
+
+scala> a.map(x=>x.split(",")).map(x=>(x(4),x(3).toInt)).reduceByKey((x,y)=>(x+y)).sortBy(x=>x._2).map(x=>x._1).collect  --taking only the product categories
+res58: Array[String] = Array(Exercise & Fitness, Outdoor Recreation, Water Sports, Team Sports, Combat sports, puzzles, Jumping, Gymnastics)
+
+scala> a.map(x=>x.split(",")).map(x=>(x(4),x(3).toInt)).reduceByKey((x,y)=>(x+y)).sortBy(x=>x._2).map(x=>x._1).take(2) --taking the first two product categories
+res59: Array[String] = Array(Exercise & Fitness, Outdoor Recreation)
+
+
+--saving the result to a text file in LFS
+--Array[(String, Int)].saveAsTextFile() doesn't exist, so converting it to RDD[(String, Int)] by using sc.parallelize()
+val top2Categories= a.map(x=>x.split(",")).map(x=>(x(4),x(3).toInt)).reduceByKey((x,y)=>(x+y)).sortBy(x=>x._2,false).take(2)
+top2Categories: Array[(String, Int)] = Array((Exercise & Fitness,3296), (Outdoor Recreation,1374))
+
+sc.parallelize(top2Categories).saveAsTextFile("Top2Categories_Array")
+
+=======================================================================================================================================================================================
+
+
+
+
+
+
+
+
+
+	
