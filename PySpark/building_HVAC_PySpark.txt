@@ -1,0 +1,134 @@
+--it's a bad practice to use collect (esp. on big files). collect is used here for learning purposes only.
+
+
+Use cases - Building & HVAC
+Building.csv has the details of each Building and its Country details. 
+HVAC.csv has the TargetTemp and ActualTemp for each building recorded at different time and date.
+We have to find the 2 Countries which has the most 'High Temperature Differences (TargetTemp-ActualTemp >5 or <-5)' recorded in their Buildings. 
+================================================================================================================================================
+
+sc.textFile("/home/hadoop/Lino/building.csv").foreach(print)
+BuildingID,BuildingMgr,BuildingAge,HVACproduct,Country
+1,M1,25,AC1000,USA
+2,M2,27,FN39TG,France
+3,M3,28,JDNS77,Brazil
+4,M4,17,GG1919,Finland
+5,M5,3,ACMAX22,Hong Kong
+6,M6,9,AC1000,Singapore
+7,M7,13,FN39TG,South Africa
+8,M8,25,JDNS77,Australia
+9,M9,11,GG1919,Mexico
+10,M10,23,ACMAX22,China
+11,M11,14,AC1000,Belgium
+12,M12,26,FN39TG,Finland
+13,M13,25,JDNS77,Saudi Arabia
+14,M14,17,GG1919,Germany
+15,M15,19,ACMAX22,Israel
+16,M16,23,AC1000,Turkey
+17,M17,11,FN39TG,Egypt
+18,M18,25,JDNS77,Indonesia
+19,M19,14,GG1919,Canada
+20,M20,19,ACMAX22,Argentina
+
+>>> build_header=sc.textFile("/home/hadoop/Lino/building.csv").first()
+ 
+>>> build_header
+'BuildingID,BuildingMgr,BuildingAge,HVACproduct,Country'
+
+build_data=sc.textFile("/home/hadoop/Lino/building.csv").filter(lambda x:x!=build_header)
+
+build_data.collect() --including last empty row
+['1,M1,25,AC1000,USA', '2,M2,27,FN39TG,France', '3,M3,28,JDNS77,Brazil', '4,M4,17,GG1919,Finland', '5,M5,3,ACMAX22,Hong Kong', '6,M6,9,AC1000,Singapore', '7,M7,13,FN39TG,South Africa', '8,M8,25,JDNS77,Australia', '9,M9,11,GG1919,Mexico', '10,M10,23,ACMAX22,China', '11,M11,14,AC1000,Belgium', '12,M12,26,FN39TG,Finland', '13,M13,25,JDNS77,Saudi Arabia', '14,M14,17,GG1919,Germany', '15,M15,19,ACMAX22,Israel', '16,M16,23,AC1000,Turkey', '17,M17,11,FN39TG,Egypt', '18,M18,25,JDNS77,Indonesia', '19,M19,14,GG1919,Canada', '20,M20,19,ACMAX22,Argentina', '']
+
+>>> build_data.map(lambda x:x.split(",")).collect()
+[['1', 'M1', '25', 'AC1000', 'USA'], ['2', 'M2', '27', 'FN39TG', 'France'], ['3', 'M3', '28', 'JDNS77', 'Brazil'], ['4', 'M4', '17', 'GG1919', 'Finland'], ['5', 'M5', '3', 'ACMAX22', 'Hong Kong'], ['6', 'M6', '9', 'AC1000', 'Singapore'], ['7', 'M7', '13', 'FN39TG', 'South Africa'], ['8', 'M8', '25', 'JDNS77', 'Australia'], ['9', 'M9', '11', 'GG1919', 'Mexico'], ['10', 'M10', '23', 'ACMAX22', 'China'], ['11', 'M11', '14', 'AC1000', 'Belgium'], ['12', 'M12', '26', 'FN39TG', 'Finland'], ['13', 'M13', '25', 'JDNS77', 'Saudi Arabia'], ['14', 'M14', '17', 'GG1919', 'Germany'], ['15', 'M15', '19', 'ACMAX22', 'Israel'], ['16', 'M16', '23', 'AC1000', 'Turkey'], ['17', 'M17', '11', 'FN39TG', 'Egypt'], ['18', 'M18', '25', 'JDNS77', 'Indonesia'], ['19', 'M19', '14', 'GG1919', 'Canada'], ['20', 'M20', '19', 'ACMAX22', 'Argentina'], ['']]
+
+--getting BuildingID and Country name
+build_data.filter(lambda x:"," in x).map(lambda x:x.split(",")).map(lambda x:(x[0],x[4])).collect() --first filter removes last empty row
+[('1', 'USA'), ('2', 'France'), ('3', 'Brazil'), ('4', 'Finland'), ('5', 'Hong Kong'), ('6', 'Singapore'), ('7', 'South Africa'), ('8', 'Australia'), ('9', 'Mexico'), ('10', 'China'), ('11', 'Belgium'), ('12', 'Finland'), ('13', 'Saudi Arabia'), ('14', 'Germany'), ('15', 'Israel'), ('16', 'Turkey'), ('17', 'Egypt'), ('18', 'Indonesia'), ('19', 'Canada'), ('20', 'Argentina')]
+
+build_Country = build_data.filter(lambda x:"," in x).map(lambda x:x.split(",")).map(lambda x:(x[0],x[4]))
+
+
+
+
+--Handling HVAC.csv file
+print(*(sc.textFile("/home/hadoop/Lino/HVAC.csv").take(4)),sep="\n")
+Date,Time,TargetTemp,ActualTemp,System,SystemAge,BuildingID
+01-06-2013,00:00:01,66,58,13,20,4
+02-06-2013,01:00:01,69,68,3,20,17
+03-06-2013,02:00:01,70,73,17,20,18
+
+sc.textFile("/home/hadoop/Lino/HVAC.csv").count()
+8002  --Including header and an empty line at the end
+
+hvac_header=sc.textFile("/home/hadoop/Lino/HVAC.csv").first() --taking only the first row as header
+
+>>> hvac_data =sc.textFile("/home/hadoop/Lino/HVAC.csv").filter(lambda x:x!=hvac_header) --removing header
+
+hvac_data.take(3) --printing top 3 rows
+['01-06-2013,00:00:01,66,58,13,20,4', '02-06-2013,01:00:01,69,68,3,20,17', '03-06-2013,02:00:01,70,73,17,20,18']) 
+
+hvac_data.map(lambda x:x.split(",")).take(3)
+[['01-06-2013', '00:00:01', '66', '58', '13', '20', '4'], ['02-06-2013', '01:00:01', '69', '68', '3', '20', '17'], ['03-06-2013', '02:00:01', '70', '73', '17', '20', '18']]
+
+hvac_data.map(lambda x:x.split(",")).filter(lambda x:"-" in x[0]).count() --after removing both header and last row 
+8000
+
+hvac_tempDiff = hvac_data.map(lambda x:x.split(",")).filter(lambda x:"-" in x[0]).map(lambda x:(x[6], int(x[2])-int(x[3]))) --x(6) is the BuildingID and x[2]-x[3] is the TargetTemp-ActualTemp
+
+hvac_tempDiff.take(2)
+[('4', 8), ('17', 1)]
+
+--TargetTemp-ActualTemp>5
+hvac_tempDiff.filter(lambda x:x[1]>5).take(5)
+[('4', 8), ('4', 11), ('2', 12), ('12', 8), ('7', 7)]
+
+--TargetTemp-ActualTemp<-5
+hvac_tempDiff.filter(lambda x:x[1]<-5).take(5)
+[('3', -6), ('13', -11), ('10', -8), ('2', -6), ('10', -10)]
+
+--TargetTemp-ActualTemp>5 or TargetTemp-ActualTemp<-5
+hvac_tempDiff.filter(lambda x:(x[1]>5) or( x[1]<-5)).take(5)
+[('4', 8), ('3', -6), ('4', 11), ('2', 12), ('12', 8)]
+
+--Joining 2 RDDs
+joinedRDDS =hvac_tempDiff.filter(lambda x:(x[1]>5) or( x[1]<-5)).join(build_Country)
+
+>>> joinedRDDS.take(5)
+[('10', (-8, 'China')), ('10', (-10, 'China')), ('10', (-12, 'China')), ('10', (14, 'China')), ('10', (8, 'China'))]
+
+joinedRDDS_groupByCountries = joinedRDDS.groupBy(lambda x:x[1][1])
+
+joinedRDDS_groupByCountries.take(2)
+[('Argentina', <pyspark.resultiterable.ResultIterable object at 0x7fa4478d39e8>), ('Mexico', <pyspark.resultiterable.ResultIterable object at 0x7fa4478d3400>)]
+
+>>>joinedRDDS_groupByCountries.take(1)[0]
+('Argentina', <pyspark.resultiterable.ResultIterable object at 0x7fa44793fac8>)
+
+>>>list(joinedRDDS_groupByCountries.take(1)[0][1])[:5]
+[('20', (8, 'Argentina')), ('20', (7, 'Argentina')), ('20', (13, 'Argentina')), ('20', (7, 'Argentina')), ('20', (9, 'Argentina'))]
+
+joinedRDDS_groupByCountries.map(lambda x: (x[0],len(x[1]))).take(3)
+[('Argentina', 230), ('Mexico', 228), ('Brazil', 226)]
+
+joinedRDDS_groupByCountries.map(lambda x: (x[0],len(x[1]))).sortBy(lambda x: x[1],False).collect()
+[('Finland', 473), ('France', 251), ('Hong Kong', 248), ('Indonesia', 243), ('Turkey', 243), ('China', 241), ('South Africa', 237), ('Egypt', 236), ('Saudi Arabia', 233), ('Israel', 232), ('Canada', 232), ('Argentina', 230), ('Singapore', 230), ('Mexico', 228), ('Brazil', 226), ('Australia', 225), ('USA', 213), ('Belgium', 199), ('Germany', 196)]
+
+joinedRDDS_groupByCountries.map(lambda x: (x[0],len(x[1]))).sortBy(lambda x: x[1],False).take(2)
+[('Finland', 473), ('France', 251)]
+
+------------------------------------------------------------------------------------
+
+
+
+--Count the total number of records with 'High Temperature Differences (TargetTemp-ActualTemp >5 or <-5)' across all Countries
+
+>>> hvac_tempDiff.filter(lambda x:(x[1]>5) or( x[1]<-5)).count()
+4616
+
+
+
+
+
+

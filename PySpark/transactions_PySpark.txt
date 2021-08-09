@@ -1,0 +1,171 @@
+--it's a bad practice to use collect (esp. on big files). collect is used here for learning purposes only.
+
+Spark version 2.3.0, Python version 3.4.3+
+
+a = sc.textFile("/home/hadoop/Python--Hadoop/Assign2/transactions") --this is an LFS location
+--a is RDD
+
+---------------------Action Commands ----------------------------------
+>>> a.collect()
+['0001,01-20-2013,400100,100,Exercise & Fitness,clarksville,credit', '0002,02-22-2013,400100,2000,Exercise & Fitness,clarksville,credit', '0003,03-07-2013,400212,300,Exercise & Fitness,long beach,cash', '0005,05-11-2013,400104,450,Exercise & Fitness,clarksville,cash', '0007,03-15-2013,400212,1374,Outdoor Recreation,charleston,credit', '0008,04-08-2013,400327,415,Water Sports,columbus,credit', '0010,11-19-2013,400978,421,Team Sports,Petersburg,credit', '0011,11-09-2013,400743,279,Combat sports,Reno,credit', '0012,12-23-2013,400743,123,Jumping,columbus,cash', '0013,12-27-2013,400527,500,Water Sports,columbus,credit', '0014,07-14-2013,400743,212,Exercise & Fitness,Honolulu,credit', '0016,08-30-2013,400078,103,Water Sports,Honolulu,credit', '0017,09-29-2013,400428,20,Gymnastics,Columbia,cash', '0018,06-13-2013,400428,234,Exercise & Fitness,Omaha,credit', '0019,05-21-2013,400675,120,Team Sports,Petersburg,cash', '0020,02-12-2013,400428,200,puzzles,New York,credit']
+
+
+>>> a.foreach(print)
+0001,01-20-2013,400100,100,Exercise & Fitness,clarksville,credit
+0002,02-22-2013,400100,2000,Exercise & Fitness,clarksville,credit
+0003,03-07-2013,400212,300,Exercise & Fitness,long beach,cash
+0005,05-11-2013,400104,450,Exercise & Fitness,clarksville,cash
+0007,03-15-2013,400212,1374,Outdoor Recreation,charleston,credit
+0008,04-08-2013,400327,415,Water Sports,columbus,credit
+0010,11-19-2013,400978,421,Team Sports,Petersburg,credit
+0011,11-09-2013,400743,279,Combat sports,Reno,credit
+0012,12-23-2013,400743,123,Jumping,columbus,cash
+0013,12-27-2013,400527,500,Water Sports,columbus,credit
+0014,07-14-2013,400743,212,Exercise & Fitness,Honolulu,credit
+0016,08-30-2013,400078,103,Water Sports,Honolulu,credit
+0017,09-29-2013,400428,20,Gymnastics,Columbia,cash
+0018,06-13-2013,400428,234,Exercise & Fitness,Omaha,credit
+0019,05-21-2013,400675,120,Team Sports,Petersburg,cash
+0020,02-12-2013,400428,200,puzzles,New York,credit
+
+a.take(3)  --Array(firstline, secondline, thirdline)
+['0001,01-20-2013,400100,100,Exercise & Fitness,clarksville,credit', '0002,02-22-2013,400100,2000,Exercise & Fitness,clarksville,credit', '0003,03-07-2013,400212,300,Exercise & Fitness,long beach,cash']
+
+a.map(lambda x:x.split(",")).collect()
+[['0001', '01-20-2013', '400100', '100', 'Exercise & Fitness', 'clarksville', 'credit'], ['0002', '02-22-2013', '400100', '2000', 'Exercise & Fitness', 'clarksville', 'credit'], ['0003', '03-07-2013', '400212', '300', 'Exercise & Fitness', 'long beach', 'cash'], ['0005', '05-11-2013', '400104', '450', 'Exercise & Fitness', 'clarksville', 'cash'], ['0007', '03-15-2013', '400212', '1374', 'Outdoor Recreation', 'charleston', 'credit'], ['0008', '04-08-2013', '400327', '415', 'Water Sports', 'columbus', 'credit'], ['0010', '11-19-2013', '400978', '421', 'Team Sports', 'Petersburg', 'credit'], ['0011', '11-09-2013', '400743', '279', 'Combat sports', 'Reno', 'credit'], ['0012', '12-23-2013', '400743', '123', 'Jumping', 'columbus', 'cash'], ['0013', '12-27-2013', '400527', '500', 'Water Sports', 'columbus', 'credit'], ['0014', '07-14-2013', '400743', '212', 'Exercise & Fitness', 'Honolulu', 'credit'], ['0016', '08-30-2013', '400078', '103', 'Water Sports', 'Honolulu', 'credit'], ['0017', '09-29-2013', '400428', '20', 'Gymnastics', 'Columbia', 'cash'], ['0018', '06-13-2013', '400428', '234', 'Exercise & Fitness', 'Omaha', 'credit'], ['0019', '05-21-2013', '400675', '120', 'Team Sports', 'Petersburg', 'cash'], ['0020', '02-12-2013', '400428', '200', 'puzzles', 'New York', 'credit']]
+
+--accessing last row
+a.map(lambda x:x.split(",")).collect()[-1]
+['0020', '02-12-2013', '400428', '200', 'puzzles', 'New York', 'credit']
+
+a.map(lambda x:x.split(",")).map(lambda x: (x[6],int(x[3]))).collect()
+[('credit', 100), ('credit', 2000), ('cash', 300), ('cash', 450), ('credit', 1374), ('credit', 415), ('credit', 421), ('credit', 279), ('cash', 123), ('credit', 500), ('credit', 212), ('credit', 103), ('cash', 20), ('credit', 234), ('cash', 120), ('credit', 200)]
+
+a.map(lambda x:x.split(",")).map(lambda x: (x[6],int(x[3]))).groupByKey().collect()
+[('cash', <pyspark.resultiterable.ResultIterable object at 0x7fcbe2432978>), ('credit', <pyspark.resultiterable.ResultIterable object at 0x7fcbe2432d68>)
+
+>>>tran3 = a.map(lambda x:x.split(",")).map(lambda x: (x[6],int(x[3]))).groupByKey().map(lambda a:(a[0],sum(a[1])))
+
+>>>tran3.collect()
+[('cash', 1013), ('credit', 5838)]
+
+a.map(lambda x: x.split(",")).map(lambda x: (x[6],int(x[3]))).filter(lambda x:x[0]=="cash").collect()
+[('cash', 300), ('cash', 450), ('cash', 123), ('cash', 20), ('cash', 120)]
+
+--accessing last item
+>>> a.map(lambda x: x.split(",")).map(lambda x: (x[6],int(x[3]))).filter(lambda x:x[0]=="cash").collect()[-1]
+('cash', 120)
+
+a.map(lambda x: x.split(",")).map(lambda x: (x[6],int(x[3]))).filter(lambda x:x[0]=="cash").count()
+5
+
+a.map(lambda x: x.split(",")).map(lambda x: (x[6],int(x[3]))).filter(lambda x:x[0]=="credit").count()
+11
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+Use cases - Transactions
+===============================================================================================================================================
+1.Find the average spent on purchase (as integer) using the cash and credit payment method
+
+a.map(lambda x:x.split(",")).map(lambda x:(int(x[3]),x[6])).collect()
+[(100, 'credit'), (2000, 'credit'), (300, 'cash'), (450, 'cash'), (1374, 'credit'), (415, 'credit'), (421, 'credit'), (279, 'credit'), (123, 'cash'), (500, 'credit'), (212, 'credit'), (103, 'credit'), (20, 'cash'), (234, 'credit'), (120, 'cash'), (200, 'credit')]
+
+>>> a.map(lambda x:x.split(",")).map(lambda x:(int(x[3]),x[6])).filter(lambda x:x[1]=="cash").collect()
+[(300, 'cash'), (450, 'cash'), (123, 'cash'), (20, 'cash'), (120, 'cash')]
+
+a.map(lambda x:x.split(",")).map(lambda x:(int(x[3]),x[6])).filter(lambda x:x[1]=="cash").map(lambda x: x[0]).collect()
+[300, 450, 123, 20, 120]
+
+>>> a.map(lambda x:x.split(",")).map(lambda x:(int(x[3]),x[6])).filter(lambda x:x[1]=="cash").map(lambda x: x[0]).mean()
+202.6
+
+>>> int(a.map(lambda x:x.split(",")).map(lambda x:(int(x[3]),x[6])).filter(lambda x:x[1]=="cash").map(lambda x: x[0]).mean()) --for cash
+202
+
+int(a.map(lambda x:x.split(",")).map(lambda x:(int(x[3]),x[6])).filter(lambda x:x[1]=="credit").map(lambda x: x[0]).mean()) --for credit
+530
+----------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+2. Find out the month of the year 2013 where most (using sum) of the transactions happened.
+
+a.map(lambda x:x.split(",")).filter(lambda x:"2013" in x[1]).collect() --filtering only the records for 2013
+[['0001', '01-20-2013', '400100', '100', 'Exercise & Fitness', 'clarksville', 'credit'], ['0002', '02-22-2013', '400100', '2000', 'Exercise & Fitness', 'clarksville', 'credit'], ['0003', '03-07-2013', '400212', '300', 'Exercise & Fitness', 'long beach', 'cash'], ['0005', '05-11-2013', '400104', '450', 'Exercise & Fitness', 'clarksville', 'cash'], ['0007', '03-15-2013', '400212', '1374', 'Outdoor Recreation', 'charleston', 'credit'], ['0008', '04-08-2013', '400327', '415', 'Water Sports', 'columbus', 'credit'], ['0010', '11-19-2013', '400978', '421', 'Team Sports', 'Petersburg', 'credit'], ['0011', '11-09-2013', '400743', '279', 'Combat sports', 'Reno', 'credit'], ['0012', '12-23-2013', '400743', '123', 'Jumping', 'columbus', 'cash'], ['0013', '12-27-2013', '400527', '500', 'Water Sports', 'columbus', 'credit'], ['0014', '07-14-2013', '400743', '212', 'Exercise & Fitness', 'Honolulu', 'credit'], ['0016', '08-30-2013', '400078', '103', 'Water Sports', 'Honolulu', 'credit'], ['0017', '09-29-2013', '400428', '20', 'Gymnastics', 'Columbia', 'cash'], ['0018', '06-13-2013', '400428', '234', 'Exercise & Fitness', 'Omaha', 'credit'], ['0019', '05-21-2013', '400675', '120', 'Team Sports', 'Petersburg', 'cash'], ['0020', '02-12-2013', '400428', '200', 'puzzles', 'New York', 'credit']]
+
+--filtering only the month and Transaction
+a.map(lambda x:x.split(",")).filter(lambda x:"2013" in x[1]).map(lambda x:(x[1][0:2],int(x[3]))).collect()
+[('01', 100), ('02', 2000), ('03', 300), ('05', 450), ('03', 1374), ('04', 415), ('11', 421), ('11', 279), ('12', 123), ('12', 500), ('07', 212), ('08', 103), ('09', 20), ('06', 234), ('05', 120), ('02', 200)]
+
+a.map(lambda x:x.split(",")).filter(lambda x:"2013" in x[1]).map(lambda x:(x[1][0:2],int(x[3]))).reduceByKey(lambda x,y:x+y).collect()
+[('12', 623), ('01', 100), ('03', 1674), ('05', 570), ('02', 2200), ('06', 234), ('11', 700), ('09', 20), ('08', 103), ('07', 212), ('04', 415)]
+
+>>> a.map(lambda x:x.split(",")).filter(lambda x:"2013" in x[1]).map(lambda x:(x[1][0:2],int(x[3]))).reduceByKey(lambda x,y:x+y).sortBy(lambda x:x[1]).collect()
+[('09', 20), ('01', 100), ('08', 103), ('07', 212), ('06', 234), ('04', 415), ('05', 570), ('12', 623), ('11', 700), ('03', 1674), ('02', 2200)]
+
+ a.map(lambda x:x.split(",")).filter(lambda x:"2013" in x[1]).map(lambda x:(x[1][0:2],int(x[3]))).reduceByKey(lambda x,y:x+y).sortBy(lambda x:x[1],False).collect()
+[('02', 2200), ('03', 1674), ('11', 700), ('12', 623), ('05', 570), ('04', 415), ('06', 234), ('07', 212), ('08', 103), ('01', 100), ('09', 20)]
+
+>>> a.map(lambda x:x.split(",")).filter(lambda x:"2013" in x[1]).map(lambda x:(x[1][0:2],int(x[3]))).reduceByKey(lambda x,y:x+y).sortBy(lambda x:x[1],False).take(2)
+[('02', 2200), ('03', 1674)] --month of the year, amount
+------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+3.Find out the city where the (sum of) transactions happened with least amount.
+
+a.map(lambda x:x.split(",")).map(lambda x: (x[5],int(x[3]))).reduceByKey(lambda x,y:x+y).sortBy(lambda x:x[1]).collect()
+[('Columbia', 20), ('New York', 200), ('Omaha', 234), ('Reno', 279), ('long beach', 300), ('Honolulu', 315), ('Petersburg', 541), ('columbus', 1038), ('charleston', 1374), ('clarksville', 2550)]
+
+>>> a.map(lambda x:x.split(",")).map(lambda x: (x[5],int(x[3]))).reduceByKey(lambda x,y:x+y).sortBy(lambda x:x[1]).take(1)
+[('Columbia', 20)]
+
+>>> a.map(lambda x:x.split(",")).map(lambda x: (x[5],int(x[3]))).reduceByKey(lambda x,y:x+y).sortBy(lambda x:x[1]).take(1)[0]
+('Columbia', 20)
+
+>>> a.map(lambda x:x.split(",")).map(lambda x: (x[5],int(x[3]))).reduceByKey(lambda x,y:x+y).sortBy(lambda x:x[1]).take(1)[0][0]
+'Columbia'
+------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+4. List down the top 2 products category which has the maximum sales.
+
+>>> a.map(lambda x:x.split(",")).map(lambda x:(x[4],int(x[3]))).collect()
+[('Exercise & Fitness', 100), ('Exercise & Fitness', 2000), ('Exercise & Fitness', 300), ('Exercise & Fitness', 450), ('Outdoor Recreation', 1374), ('Water Sports', 415), ('Team Sports', 421), ('Combat sports', 279), ('Jumping', 123), ('Water Sports', 500), ('Exercise & Fitness', 212), ('Water Sports', 103), ('Gymnastics', 20), ('Exercise & Fitness', 234), ('Team Sports', 120), ('puzzles', 200)]
+
+a.map(lambda x:x.split(",")).map(lambda x:(x[4],int(x[3]))).reduceByKey(lambda x,y:x+y).sortBy(lambda x:x[1]).collect()
+[('Gymnastics', 20), ('Jumping', 123), ('puzzles', 200), ('Combat sports', 279), ('Team Sports', 541), ('Water Sports', 1018), ('Outdoor Recreation', 1374), ('Exercise & Fitness', 3296)]
+
+>>> a.map(lambda x:x.split(",")).map(lambda x:(x[4],int(x[3]))).reduceByKey(lambda x,y:x+y).sortBy(lambda x:x[1],False).map(lambda x:x[0]).take(2)
+['Exercise & Fitness', 'Outdoor Recreation']
+
+
+
+
+
+--saving the result to a text file in LFS
+
+>>> categories = a.map(lambda x:x.split(",")).map(lambda x:(x[4],int(x[3]))).reduceByKey(lambda x,y:x+y).sortBy(lambda x:x[1],False).map(lambda x:x[0]).take(2)
+
+>>> sc.parallelize(categories).saveAsTextFile("dirName") --file is saved in LFS at - /home/hadoop/dirName/part-00000
+=======================================================================================================================================================================================
+
+
+
+
+
+
+
+
+
+	

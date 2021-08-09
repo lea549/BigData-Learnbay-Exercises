@@ -1,4 +1,6 @@
---it's a bad practice to use collect
+--it's a bad practice to use collect (esp. on big files). collect is used here for learning purposes only.
+
+--Spark version 2.3.0, Scala 2.11.8, Java 1.8.0_171
 
 val a = sc.textFile("/home/hadoop/Python--Hadoop/Assign2/transactions") --this is an LFS location
 
@@ -74,7 +76,7 @@ credit_count: Long = 11
 
 Use cases - Transactions
 ===============================================================================================================================================
-1.Find the average spent on purchase using the cash and credit payment method
+1.Find the average spent on purchase (as integer) using the cash and credit payment method
 
 val cash_count=a.map(x=>x.split(",")).map(x=>(x(6),x(3).toInt)).filter(x=>x._1.contains("cash")).count
 cash_count: Long = 5
@@ -92,7 +94,8 @@ print((credit_total/credit_count).toInt)
 ----------------------------------------------------------------------------------------------------------------------------
 
 
-2. Find out the month of the year 2013 where most of the transactions happened.
+
+2. Find out the month of the year 2013 where most (using sum) of the transactions happened.
 
 a.map(x=>x.split(",")).filter(x=>x(1).contains("2013")).collect --filtering only the records for 2013
 res28: Array[Array[String]] = Array(Array(0001, 01-20-2013, 400100, 100, Exercise & Fitness, clarksville, credit), Array(0002, 02-22-2013, 400100, 2000, Exercise & Fitness, clarksville, credit), Array(0003, 03-07-2013, 400212, 300, Exercise & Fitness, long beach, cash), Array(0005, 05-11-2013, 400104, 450, Exercise & Fitness, clarksville, cash), Array(0007, 03-15-2013, 400212, 1374, Outdoor Recreation, charleston, credit), Array(0008, 04-08-2013, 400327, 415, Water Sports, columbus, credit), Array(0010, 11-19-2013, 400978, 421, Team Sports, Petersburg, credit), Array(0011, 11-09-2013, 400743, 279, Combat sports, Reno, credit), Array(0012, 12-23-2013, 400743, 123, Jumping, columbus, cash), Array(0013, 12-27-2013, 400527, 500, Water Sports, columbus, credit), Array(0014, 07-14-2013, 40074...
@@ -105,13 +108,13 @@ res32: Array[(String, String)] = Array((01,100), (02,2000), (03,300), (05,450), 
 month_trans.reduceByKey((x,y)=>(x+y)).collect
 res34: Array[(String, Int)] = Array((06,234), (09,20), (02,2200), (04,415), (03,1674), (07,212), (12,623), (05,570), (11,700), (01,100), (08,103))
 
-month_trans.reduceByKey((x,y)=>(x+y)).sortBy(x=>x._2,false).take(2)
+month_trans.reduceByKey((x,y)=>(x+y)).sortBy(x=>x._2,false).take(2)  --month of the year, amount
 res35: Array[(String, Int)] = Array((02,2200), (03,1674))
 ------------------------------------------------------------------------------------------------------------------------------
 
 
 
-3.Find out the city where the transactions happened with least amount.
+3.Find out the city where the (sum of) transactions happened with least amount.
 
 a.map(x=>x.split(",")).map(x=>(x(5),x(3))).collect
 res37: Array[(String, String)] = Array((clarksville,100), (clarksville,2000), (long beach,300), (clarksville,450), (charleston,1374), (columbus,415), (Petersburg,421), (Reno,279), (columbus,123), (columbus,500), (Honolulu,212), (Honolulu,103), (Columbia,20), (Omaha,234), (Petersburg,120), (New York,200))
