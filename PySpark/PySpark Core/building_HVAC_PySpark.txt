@@ -122,7 +122,7 @@ joinedRDDS_groupByCountries.map(lambda x: (x[0],len(x[1]))).sortBy(lambda x: x[1
 
 
 
---Count the total number of records with 'High Temperature Differences (TargetTemp-ActualTemp >5 or <-5)' across all Countries
+--Count the total number of instances with 'High Temperature Differences (TargetTemp-ActualTemp >5 or <-5)' across all Countries
 
 >>> hvac_tempDiff.filter(lambda x:(x[1]>5) or( x[1]<-5)).count()
 4616

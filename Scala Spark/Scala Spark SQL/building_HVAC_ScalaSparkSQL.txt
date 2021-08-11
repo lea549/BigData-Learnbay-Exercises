@@ -1,0 +1,117 @@
+Use cases - Building & HVAC
+
+Building.csv has the details of each Building and its Country details. 
+HVAC.csv has the TargetTemp and ActualTemp for each building recorded at different time and date.
+
+We have to find the 2 Countries which has the most 'High Temperature Differences (TargetTemp-ActualTemp >5 or <-5)' recorded in their Buildings. 
+================================================================================================================================================
+
+
+
+spark-shell
+
+import org.apache.spark.sql.SQLContext
+val sqlctx = new SQLContext(sc) --sc is the Spark Context
+
+val df_build = sqlctx.read.format("csv").option("header","true").option("delimiter",",").option("inferSchema","true").load("/home/hadoop/Lino/building.csv") --df_build is a DataFrame
+
+scala> df_build.registerTempTable("building")
+
+scala> sqlctx.sql("select count(*) from building").show
++--------+
+|count(1)|
++--------+
+|      20|
++--------+
+
+scala> sqlctx.sql("select * from building").show
++----------+-----------+-----------+-----------+------------+
+|BuildingID|BuildingMgr|BuildingAge|HVACproduct|     Country|
++----------+-----------+-----------+-----------+------------+
+|         1|         M1|         25|     AC1000|         USA|
+|         2|         M2|         27|     FN39TG|      France|
+|         3|         M3|         28|     JDNS77|      Brazil|
+|         4|         M4|         17|     GG1919|     Finland|
+|         5|         M5|          3|    ACMAX22|   Hong Kong|
+|         6|         M6|          9|     AC1000|   Singapore|
+|         7|         M7|         13|     FN39TG|South Africa|
+|         8|         M8|         25|     JDNS77|   Australia|
+|         9|         M9|         11|     GG1919|      Mexico|
+|        10|        M10|         23|    ACMAX22|       China|
+|        11|        M11|         14|     AC1000|     Belgium|
+|        12|        M12|         26|     FN39TG|     Finland|
+|        13|        M13|         25|     JDNS77|Saudi Arabia|
+|        14|        M14|         17|     GG1919|     Germany|
+|        15|        M15|         19|    ACMAX22|      Israel|
+|        16|        M16|         23|     AC1000|      Turkey|
+|        17|        M17|         11|     FN39TG|       Egypt|
+|        18|        M18|         25|     JDNS77|   Indonesia|
+|        19|        M19|         14|     GG1919|      Canada|
+|        20|        M20|         19|    ACMAX22|   Argentina|
++----------+-----------+-----------+-----------+------------+
+
+
+
+
+scala> val df_HVAC = sqlctx.read.format("csv").option("header","true").option("delimiter",",").option("inferSchema","true").load("/home/hadoop/Lino/HVAC.csv")
+
+scala> df_HVAC.registerTempTable("HVAC")
+
+sqlctx.sql("select count(*) from HVAC").show
++--------+
+|count(1)|
++--------+
+|    8000|
++--------+
+
+scala> sqlctx.sql("select * from HVAC limit 5").show
++----------+--------+----------+----------+------+---------+----------+
+|      Date|    Time|TargetTemp|ActualTemp|System|SystemAge|BuildingID|
++----------+--------+----------+----------+------+---------+----------+
+|01-06-2013|00:00:01|        66|        58|    13|       20|         4|
+|02-06-2013|01:00:01|        69|        68|     3|       20|        17|
+|03-06-2013|02:00:01|        70|        73|    17|       20|        18|
+|04-06-2013|03:00:01|        67|        63|     2|       23|        15|
+|05-06-2013|04:00:01|        68|        74|    16|        9|         3|
++----------+--------+----------+----------+------+---------+----------+
+
+
+sqlctx.sql("select * from HVAC where TargetTemp-ActualTemp > 5 or TargetTemp-ActualTemp<-5 limit 5").show
++----------+--------+----------+----------+------+---------+----------+
+|      Date|    Time|TargetTemp|ActualTemp|System|SystemAge|BuildingID|
++----------+--------+----------+----------+------+---------+----------+
+|01-06-2013|00:00:01|        66|        58|    13|       20|         4|
+|05-06-2013|04:00:01|        68|        74|    16|        9|         3|
+|06-06-2013|05:00:01|        67|        56|    13|       28|         4|
+|07-06-2013|06:00:01|        70|        58|    12|       24|         2|
+|10-06-2013|09:00:01|        65|        57|     6|        5|        12|
++----------+--------+----------+----------+------+---------+----------+
+
+
+
+sqlctx.sql("select count(HVAC.BuildingID), Country from HVAC join building on HVAC.BuildingID = building.BuildingID where TargetTemp-ActualTemp > 5 or TargetTemp-ActualTemp<-5 group by Country order by count(HVAC.BuildingID) desc limit 2").show
++-----------------+---------+                                                   
+|count(BuildingID)|  Country|
++-----------------+---------+
+|              473|  Finland|
+|              251|   France|
++-----------------+---------+
+
+------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+--Count the total number of instances with 'High Temperature Differences (TargetTemp-ActualTemp >5 or <-5)' across all Countries
+
+scala> sqlctx.sql("select count(HVAC.BuildingID) from HVAC join building on HVAC.BuildingID = building.BuildingID where TargetTemp-ActualTemp > 5 or TargetTemp-ActualTemp<-5").show
++-----------------+
+|count(BuildingID)|
++-----------------+
+|             4616|
++-----------------+
+
+
+
+
+

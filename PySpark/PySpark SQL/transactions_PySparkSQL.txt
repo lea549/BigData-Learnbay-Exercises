@@ -1,0 +1,93 @@
+------------------------these are few examples based on transactions.txt-----------------------------------------------------------------
+
+--to use python3
+export PYSPARK_PYTHON=/usr/bin/python3
+export PYSPARK_DRIVER_PYTHON=/usr/bin/python3
+
+pyspark --to start PySpark session
+
+from pyspark import SQLContext
+sqlctx = SQLContext(sc) --sc is the SparkContext
+
+>>> t1=sc.textFile("/home/hadoop/Python--Hadoop/Assign2/transactions")
+
+>>> t1.collect()
+['0001,01-20-2013,400100,100,Exercise & Fitness,clarksville,credit', '0002,02-22-2013,400100,2000,Exercise & Fitness,clarksville,credit', '0003,03-07-2013,400212,300,Exercise & Fitness,long beach,cash', '0005,05-11-2013,400104,450,Exercise & Fitness,clarksville,cash', '0007,03-15-2013,400212,1374,Outdoor Recreation,charleston,credit', '0008,04-08-2013,400327,415,Water Sports,columbus,credit', '0010,11-19-2013,400978,421,Team Sports,Petersburg,credit', '0011,11-09-2013,400743,279,Combat sports,Reno,credit', '0012,12-23-2013,400743,123,Jumping,columbus,cash', '0013,12-27-2013,400527,500,Water Sports,columbus,credit', '0014,07-14-2013,400743,212,Exercise & Fitness,Honolulu,credit', '0016,08-30-2013,400078,103,Water Sports,Honolulu,credit', '0017,09-29-2013,400428,20,Gymnastics,Columbia,cash', '0018,06-13-2013,400428,234,Exercise & Fitness,Omaha,credit', '0019,05-21-2013,400675,120,Team Sports,Petersburg,cash', '0020,02-12-2013,400428,200,puzzles,New York,credit']
+
+t2 = t1.map(lambda a:a.split(",")).map(lambda a:(a[0],a[1],a[2],a[3],a[4],a[5],a[6])) --t2 is a RDD
+
+>>> t3=t2.toDF(("txnno", "txndate", "id", "amt", "category", "city", "payment_method"))
+
+>>> t3
+DataFrame[txnno: string, txndate: string, id: string, amt: string, category: string, city: string, payment_method: string]
+
+t3.collect()
+[Row(txnno='0001', txndate='01-20-2013', id='400100', amt='100', category='Exercise & Fitness', city='clarksville', payment_method='credit'), Row(txnno='0002', txndate='02-22-2013', id='400100', amt='2000', category='Exercise & Fitness', city='clarksville', payment_method='credit'), Row(txnno='0003', txndate='03-07-2013', id='400212', amt='300', category='Exercise & Fitness', city='long beach', payment_method='cash'), Row(txnno='0005', txndate='05-11-2013', id='400104', amt='450', category='Exercise & Fitness', city='clarksville', payment_method='cash'), Row(txnno='0007', txndate='03-15-2013', id='400212', amt='1374', category='Outdoor Recreation', city='charleston', payment_method='credit'), Row(txnno='0008', txndate='04-08-2013', id='400327', amt='415', category='Water Sports', city='columbus', payment_method='credit'), Row(txnno='0010', txndate='11-19-2013', id='400978', amt='421', category='Team Sports', city='Petersburg', payment_method='credit'), Row(txnno='0011', txndate='11-09-2013', id='400743', amt='279', category='Combat sports', city='Reno', payment_method='credit'), Row(txnno='0012', txndate='12-23-2013', id='400743', amt='123', category='Jumping', city='columbus', payment_method='cash'), Row(txnno='0013', txndate='12-27-2013', id='400527', amt='500', category='Water Sports', city='columbus', payment_method='credit'), Row(txnno='0014', txndate='07-14-2013', id='400743', amt='212', category='Exercise & Fitness', city='Honolulu', payment_method='credit'), Row(txnno='0016', txndate='08-30-2013', id='400078', amt='103', category='Water Sports', city='Honolulu', payment_method='credit'), Row(txnno='0017', txndate='09-29-2013', id='400428', amt='20', category='Gymnastics', city='Columbia', payment_method='cash'), Row(txnno='0018', txndate='06-13-2013', id='400428', amt='234', category='Exercise & Fitness', city='Omaha', payment_method='credit'), Row(txnno='0019', txndate='05-21-2013', id='400675', amt='120', category='Team Sports', city='Petersburg', payment_method='cash'), Row(txnno='0020', txndate='02-12-2013', id='400428', amt='200', category='puzzles', city='New York', payment_method='credit')]
+
+t3.printSchema()
+root
+ |-- txnno: string (nullable = true)
+ |-- txndate: string (nullable = true)
+ |-- id: string (nullable = true)
+ |-- amt: string (nullable = true)
+ |-- category: string (nullable = true)
+ |-- city: string (nullable = true)
+ |-- payment_method: string (nullable = true)
+
+t3.registerTempTable("Txn1") --this table is session-bounded
+
+q1 = sqlctx.sql("select * from Txn1").show()
++-----+----------+------+----+------------------+-----------+--------------+
+|txnno|   txndate|    id| amt|          category|       city|payment_method|
++-----+----------+------+----+------------------+-----------+--------------+
+| 0001|01-20-2013|400100| 100|Exercise & Fitness|clarksville|        credit|
+| 0002|02-22-2013|400100|2000|Exercise & Fitness|clarksville|        credit|
+| 0003|03-07-2013|400212| 300|Exercise & Fitness| long beach|          cash|
+| 0005|05-11-2013|400104| 450|Exercise & Fitness|clarksville|          cash|
+| 0007|03-15-2013|400212|1374|Outdoor Recreation| charleston|        credit|
+| 0008|04-08-2013|400327| 415|      Water Sports|   columbus|        credit|
+| 0010|11-19-2013|400978| 421|       Team Sports| Petersburg|        credit|
+| 0011|11-09-2013|400743| 279|     Combat sports|       Reno|        credit|
+| 0012|12-23-2013|400743| 123|           Jumping|   columbus|          cash|
+| 0013|12-27-2013|400527| 500|      Water Sports|   columbus|        credit|
+| 0014|07-14-2013|400743| 212|Exercise & Fitness|   Honolulu|        credit|
+| 0016|08-30-2013|400078| 103|      Water Sports|   Honolulu|        credit|
+| 0017|09-29-2013|400428|  20|        Gymnastics|   Columbia|          cash|
+| 0018|06-13-2013|400428| 234|Exercise & Fitness|      Omaha|        credit|
+| 0019|05-21-2013|400675| 120|       Team Sports| Petersburg|          cash|
+| 0020|02-12-2013|400428| 200|           puzzles|   New York|        credit|
++-----+----------+------+----+------------------+-----------+--------------+
+
+
+sqlctx.sql("select * from Txn1 limit 3").show()
++-----+----------+------+----+------------------+-----------+--------------+
+|txnno|   txndate|    id| amt|          category|       city|payment_method|
++-----+----------+------+----+------------------+-----------+--------------+
+| 0001|01-20-2013|400100| 100|Exercise & Fitness|clarksville|        credit|
+| 0002|02-22-2013|400100|2000|Exercise & Fitness|clarksville|        credit|
+| 0003|03-07-2013|400212| 300|Exercise & Fitness| long beach|          cash|
++-----+----------+------+----+------------------+-----------+--------------+
+
+
+--printing last row from the table
+>>> sqlctx.sql("select * from Txn1 order by txnno desc limit 1").show()
++-----+----------+------+---+--------+--------+--------------+
+|txnno|   txndate|    id|amt|category|    city|payment_method|
++-----+----------+------+---+--------+--------+--------------+
+| 0020|02-12-2013|400428|200| puzzles|New York|        credit|
++-----+----------+------+---+--------+--------+--------------+
+
+
+--taking the sum of transactions by payment type
+>>> sqlctx.sql("select payment_method, sum(amt) from Txn1 group by payment_method").show()
++--------------+------------------------+                                       
+|payment_method|sum(CAST(amt AS DOUBLE))|
++--------------+------------------------+
+|          cash|                  1013.0|
+|        credit|                  5838.0|
++--------------+------------------------+
+
+
+
+
+

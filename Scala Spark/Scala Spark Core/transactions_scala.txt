@@ -1,3 +1,6 @@
+--these are few examples based on transactions.txt
+
+
 --it's a bad practice to use collect (esp. on big files). collect is used here for learning purposes only.
 
 --Spark version 2.3.0, Scala 2.11.8, Java 1.8.0_171
@@ -56,14 +59,23 @@ Array(
 (cash,CompactBuffer(300, 450, 123, 20, 120)), 
 (credit,CompactBuffer(100, 2000, 1374, 415, 421, 279, 500, 212, 103, 234, 200)))
 
+
+
+--sum of amount by payment type
 val tran3=a.map(x=>x.split(",")).map(x=>(x(6),x(3).toInt)).groupByKey().map(a=>(a._1,a._2.sum))
 
 tran3.collect
 res25: Array[(String, Int)] = Array((cash,1013), (credit,5838))
 
+
+
+--filtering out cash transactions
 a.map(x=>x.split(",")).map(x=>(x(6),x(3).toInt)).filter(x=>x._1.contains("cash")).collect
 res27: Array[(String, Int)] = Array((cash,300), (cash,450), (cash,123), (cash,20), (cash,120))
 
+
+
+-- count of transactions by payment method
 val cash_count=a.map(x=>x.split(",")).map(x=>(x(6),x(3).toInt)).filter(x=>x._1.contains("cash")).count
 cash_count: Long = 5
 
@@ -162,7 +174,7 @@ res59: Array[String] = Array(Exercise & Fitness, Outdoor Recreation)
 
 --saving the result to a text file in LFS
 --Array[(String, Int)].saveAsTextFile() doesn't exist, so converting it to RDD[(String, Int)] by using sc.parallelize()
-val top2Categories= a.map(x=>x.split(",")).map(x=>(x(4),x(3).toInt)).reduceByKey((x,y)=>(x+y)).sortBy(x=>x._2,false).take(2)
+val top2Categories = a.map(x=>x.split(",")).map(x=>(x(4),x(3).toInt)).reduceByKey((x,y)=>(x+y)).sortBy(x=>x._2,false).take(2)
 top2Categories: Array[(String, Int)] = Array((Exercise & Fitness,3296), (Outdoor Recreation,1374))
 
 sc.parallelize(top2Categories).saveAsTextFile("Top2Categories_Array")

@@ -3,8 +3,10 @@
 --Spark version 2.3.0, Scala 2.11.8, Java 1.8.0_171
 
 Use cases - Building & HVAC
+
 Building.csv has the details of each Building and its Country details. 
 HVAC.csv has the TargetTemp and ActualTemp for each building recorded at different time and date.
+
 We have to find the 2 Countries which has the most 'High Temperature Differences (TargetTemp-ActualTemp >5 or <-5)' recorded in their Buildings. 
 ================================================================================================================================================
 
@@ -119,7 +121,7 @@ res18: Array[(String, Int)] = Array((Finland,473), (France,251))
 
 ---------------------------------------------------------------------------
 
---Count the total number of records with 'High Temperature Differences (TargetTemp-ActualTemp >5 or <-5)' across all Countries
+--Count the total number of instances with 'High Temperature Differences (TargetTemp-ActualTemp >5 or <-5)' across all Countries
 
 scala> hvac_tempDiff.filter(x=>x._2>5 || x._2<(-5)).count
 res1: Long = 4616

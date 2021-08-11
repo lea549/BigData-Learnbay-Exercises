@@ -1,0 +1,281 @@
+-------------These are some Scala Spark SQL examples based on transactions.txt--------------------
+
+
+spark-shell --to start the spark shell
+
+scala> import org.apache.spark.sql.SQLContext
+scala> val sqlctx = new SQLContext(sc)  --sc is the SparkContext
+
+scala> val t1=sc.textFile("/home/hadoop/Python--Hadoop/Assign2/transactions")
+
+scala> t1.collect
+res2: Array[String] = Array(0001,01-20-2013,400100,100,Exercise & Fitness,clarksville,credit, 0002,02-22-2013,400100,2000,Exercise & Fitness,clarksville,credit, 0003,03-07-2013,400212,300,Exercise & Fitness,long beach,cash, 0005,05-11-2013,400104,450,Exercise & Fitness,clarksville,cash, 0007,03-15-2013,400212,1374,Outdoor Recreation,charleston,credit, 0008,04-08-2013,400327,415,Water Sports,columbus,credit, 0010,11-19-2013,400978,421,Team Sports,Petersburg,credit, 0011,11-09-2013,400743,279,Combat sports,Reno,credit, 0012,12-23-2013,400743,123,Jumping,columbus,cash, 0013,12-27-2013,400527,500,Water Sports,columbus,credit, 0014,07-14-2013,400743,212,Exercise & Fitness,Honolulu,credit, 0016,08-30-2013,400078,103,Water Sports,Honolulu,credit, 0017,09-29-2013,400428,20,Gymnastics,Columbia,c...
+
+scala> t1.foreach(println)
+0001,01-20-2013,400100,100,Exercise & Fitness,clarksville,credit
+0002,02-22-2013,400100,2000,Exercise & Fitness,clarksville,credit
+0003,03-07-2013,400212,300,Exercise & Fitness,long beach,cash
+0005,05-11-2013,400104,450,Exercise & Fitness,clarksville,cash
+0007,03-15-2013,400212,1374,Outdoor Recreation,charleston,credit
+0008,04-08-2013,400327,415,Water Sports,columbus,credit
+0010,11-19-2013,400978,421,Team Sports,Petersburg,credit
+0011,11-09-2013,400743,279,Combat sports,Reno,credit
+0012,12-23-2013,400743,123,Jumping,columbus,cash
+0013,12-27-2013,400527,500,Water Sports,columbus,credit
+0014,07-14-2013,400743,212,Exercise & Fitness,Honolulu,credit
+0016,08-30-2013,400078,103,Water Sports,Honolulu,credit
+0017,09-29-2013,400428,20,Gymnastics,Columbia,cash
+0018,06-13-2013,400428,234,Exercise & Fitness,Omaha,credit
+0019,05-21-2013,400675,120,Team Sports,Petersburg,cash
+0020,02-12-2013,400428,200,puzzles,New York,credit
+
+val t2 = t1.map(a=>a.split(",")).map(a=>(a(0),a(1),a(2),a(3),a(4),a(5),a(6)))
+t2: org.apache.spark.rdd.RDD[(String, String, String, String, String, String, String)] = MapPartitionsRDD[9] at map at <console>:26
+
+val t3=t2.toDF("txnno", "txndate", "id", "amt", "category", "city", "payment_method") --t3 is an org.apache.spark.sql.DataFrame
+
+scala> t3.collect
+res4: Array[org.apache.spark.sql.Row] = Array([0001,01-20-2013,400100,100,Exercise & Fitness,clarksville,credit], [0002,02-22-2013,400100,2000,Exercise & Fitness,clarksville,credit], [0003,03-07-2013,400212,300,Exercise & Fitness,long beach,cash], [0005,05-11-2013,400104,450,Exercise & Fitness,clarksville,cash], [0007,03-15-2013,400212,1374,Outdoor Recreation,charleston,credit], [0008,04-08-2013,400327,415,Water Sports,columbus,credit], [0010,11-19-2013,400978,421,Team Sports,Petersburg,credit], [0011,11-09-2013,400743,279,Combat sports,Reno,credit], [0012,12-23-2013,400743,123,Jumping,columbus,cash], [0013,12-27-2013,400527,500,Water Sports,columbus,credit], [0014,07-14-2013,400743,212,Exercise & Fitness,Honolulu,credit], [0016,08-30-2013,400078,103,Water Sports,Honolulu,credit], [0017...
+
+scala> t3.printSchema
+root
+ |-- txnno: string (nullable = true)
+ |-- txndate: string (nullable = true)
+ |-- id: string (nullable = true)
+ |-- amt: string (nullable = true)
+ |-- category: string (nullable = true)
+ |-- city: string (nullable = true)
+ |-- payment_method: string (nullable = true
+
+scala> t3.registerTempTable("Txn1") --this table is session-bounded
+
+scala> val q1 = sqlctx.sql("select * from Txn1")
+q1: org.apache.spark.sql.DataFrame = [txnno: string, txndate: string ... 5 more fields]
+
+scala> q1.show
++-----+----------+------+----+------------------+-----------+--------------+
+|txnno|   txndate|    id| amt|          category|       city|payment_method|
++-----+----------+------+----+------------------+-----------+--------------+
+| 0001|01-20-2013|400100| 100|Exercise & Fitness|clarksville|        credit|
+| 0002|02-22-2013|400100|2000|Exercise & Fitness|clarksville|        credit|
+| 0003|03-07-2013|400212| 300|Exercise & Fitness| long beach|          cash|
+| 0005|05-11-2013|400104| 450|Exercise & Fitness|clarksville|          cash|
+| 0007|03-15-2013|400212|1374|Outdoor Recreation| charleston|        credit|
+| 0008|04-08-2013|400327| 415|      Water Sports|   columbus|        credit|
+| 0010|11-19-2013|400978| 421|       Team Sports| Petersburg|        credit|
+| 0011|11-09-2013|400743| 279|     Combat sports|       Reno|        credit|
+| 0012|12-23-2013|400743| 123|           Jumping|   columbus|          cash|
+| 0013|12-27-2013|400527| 500|      Water Sports|   columbus|        credit|
+| 0014|07-14-2013|400743| 212|Exercise & Fitness|   Honolulu|        credit|
+| 0016|08-30-2013|400078| 103|      Water Sports|   Honolulu|        credit|
+| 0017|09-29-2013|400428|  20|        Gymnastics|   Columbia|          cash|
+| 0018|06-13-2013|400428| 234|Exercise & Fitness|      Omaha|        credit|
+| 0019|05-21-2013|400675| 120|       Team Sports| Petersburg|          cash|
+| 0020|02-12-2013|400428| 200|           puzzles|   New York|        credit|
++-----+----------+------+----+------------------+-----------+--------------+
+
+
+
+--print top 5 rows from the Txn1 table
+scala> val q1 = sqlctx.sql("select * from Txn1 limit 5")
+scala> q1.show
++-----+----------+------+----+------------------+-----------+--------------+
+|txnno|   txndate|    id| amt|          category|       city|payment_method|
++-----+----------+------+----+------------------+-----------+--------------+
+| 0001|01-20-2013|400100| 100|Exercise & Fitness|clarksville|        credit|
+| 0002|02-22-2013|400100|2000|Exercise & Fitness|clarksville|        credit|
+| 0003|03-07-2013|400212| 300|Exercise & Fitness| long beach|          cash|
+| 0005|05-11-2013|400104| 450|Exercise & Fitness|clarksville|          cash|
+| 0007|03-15-2013|400212|1374|Outdoor Recreation| charleston|        credit|
++-----+----------+------+----+------------------+-----------+--------------+
+
+
+
+--printing last row from the table
+scala> sqlctx.sql("select * from Txn1 order by txnno desc limit 1").show
++-----+----------+------+---+--------+--------+--------------+
+|txnno|   txndate|    id|amt|category|    city|payment_method|
++-----+----------+------+---+--------+--------+--------------+
+| 0020|02-12-2013|400428|200| puzzles|New York|        credit|
++-----+----------+------+---+--------+--------+--------------+
+
+
+
+
+--taking the sum of transactions by payment type
+scala> sqlctx.sql("select payment_method, sum(amt) from Txn1 group by payment_method").show
++--------------+------------------------+                                       
+|payment_method|sum(CAST(amt AS DOUBLE))|
++--------------+------------------------+
+|          cash|                  1013.0|
+|        credit|                  5838.0|
++--------------+------------------------+
+
+
+
+--filtering out cash and credit transactions seperately
+
+scala> sqlctx.sql("select *  from Txn1 where  payment_method='cash'").show
++-----+----------+------+---+------------------+-----------+--------------+
+|txnno|   txndate|    id|amt|          category|       city|payment_method|
++-----+----------+------+---+------------------+-----------+--------------+
+| 0003|03-07-2013|400212|300|Exercise & Fitness| long beach|          cash|
+| 0005|05-11-2013|400104|450|Exercise & Fitness|clarksville|          cash|
+| 0012|12-23-2013|400743|123|           Jumping|   columbus|          cash|
+| 0017|09-29-2013|400428| 20|        Gymnastics|   Columbia|          cash|
+| 0019|05-21-2013|400675|120|       Team Sports| Petersburg|          cash|
++-----+----------+------+---+------------------+-----------+--------------+
+
+
+scala> sqlctx.sql("select *  from Txn1 where  payment_method='credit'").show
++-----+----------+------+----+------------------+-----------+--------------+
+|txnno|   txndate|    id| amt|          category|       city|payment_method|
++-----+----------+------+----+------------------+-----------+--------------+
+| 0001|01-20-2013|400100| 100|Exercise & Fitness|clarksville|        credit|
+| 0002|02-22-2013|400100|2000|Exercise & Fitness|clarksville|        credit|
+| 0007|03-15-2013|400212|1374|Outdoor Recreation| charleston|        credit|
+| 0008|04-08-2013|400327| 415|      Water Sports|   columbus|        credit|
+| 0010|11-19-2013|400978| 421|       Team Sports| Petersburg|        credit|
+| 0011|11-09-2013|400743| 279|     Combat sports|       Reno|        credit|
+| 0013|12-27-2013|400527| 500|      Water Sports|   columbus|        credit|
+| 0014|07-14-2013|400743| 212|Exercise & Fitness|   Honolulu|        credit|
+| 0016|08-30-2013|400078| 103|      Water Sports|   Honolulu|        credit|
+| 0018|06-13-2013|400428| 234|Exercise & Fitness|      Omaha|        credit|
+| 0020|02-12-2013|400428| 200|           puzzles|   New York|        credit|
++-----+----------+------+----+------------------+-----------+--------------+
+
+
+-- count of cash and credit transactions
+scala> sqlctx.sql("select count(*)  from Txn1 where  payment_method='credit'").show
++--------+
+|count(1)|
++--------+
+|      11|
++--------+
+
+scala> sqlctx.sql("select count(*)  from Txn1 where  payment_method='cash'").show
++--------+
+|count(1)|
++--------+
+|       5|
++--------+
+
+
+Use cases - Transactions
+===============================================================================================================================================
+1.Find the average spent on purchase (as integer) using the cash and credit payment method
+
+scala> sqlctx.sql("select int(avg(amt))  as integer  from Txn1 where  payment_method='cash'").show
++-------------------------------------+
+|CAST(avg(CAST(amt AS DOUBLE)) AS INT)|
++-------------------------------------+
+|                                  202|
++-------------------------------------+
+
+
+scala> sqlctx.sql("select int(avg(amt))  as integer  from Txn1 where  payment_method='credit'").show
++-------------------------------------+
+|CAST(avg(CAST(amt AS DOUBLE)) AS INT)|
++-------------------------------------+
+|                                  530|
++-------------------------------------+
+
+
+
+
+
+2. Find out the month of the year 2013 where most of the transactions (using sum) happened.
+
+scala> sqlctx.sql("select count(*) from Txn1 where txndate like '%2013'").show --how many records in 2013
++--------+
+|count(1)|
++--------+
+|      16|
++--------+
+
+scala> sqlctx.sql("select substring(txndate,1,2) as month, sum(amt) as month_sum from Txn1 where txndate like '%2013' group by substring(txndate,1,2) order by sum(amt) desc limit 1").show
++-----+---------+                                                               
+|month|month_sum|
++-----+---------+
+|   02|   2200.0|
++-----+---------+
+
+
+
+
+
+3.Find out the city where the (sum of) transactions happened with least amount.
+
+scala> sqlctx.sql("select city,sum(amt) from Txn1 group by city").show
++-----------+------------------------+                                          
+|       city|sum(CAST(amt AS DOUBLE))|
++-----------+------------------------+
+|      Omaha|                   234.0|
+| Petersburg|                   541.0|
+| charleston|                  1374.0|
+| long beach|                   300.0|
+|       Reno|                   279.0|
+|   Honolulu|                   315.0|
+|clarksville|                  2550.0|
+|   columbus|                  1038.0|
+|   Columbia|                    20.0|
+|   New York|                   200.0|
++-----------+------------------------+
+
+scala> sqlctx.sql("select city from Txn1 group by city order by sum(amt) limit 1").show
++--------+                                                                      
+|    city|
++--------+
+|Columbia|
++--------+
+
+
+
+
+
+4. List down the top 2 products category which has the maximum sales.
+
+sqlctx.sql("select category, sum(amt) from Txn1 group by category order by sum(amt) desc").show
++------------------+------------------------+                                   
+|          category|sum(CAST(amt AS DOUBLE))|
++------------------+------------------------+
+|Exercise & Fitness|                  3296.0|
+|Outdoor Recreation|                  1374.0|
+|      Water Sports|                  1018.0|
+|       Team Sports|                   541.0|
+|     Combat sports|                   279.0|
+|           puzzles|                   200.0|
+|           Jumping|                   123.0|
+|        Gymnastics|                    20.0|
++------------------+------------------------+
+
+
+sqlctx.sql("select category from Txn1 group by category order by sum(amt) desc limit 2").show
++------------------+                                                            
+|          category|
++------------------+
+|Exercise & Fitness|
+|Outdoor Recreation|
++------------------+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

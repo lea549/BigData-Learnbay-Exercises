@@ -1,0 +1,69 @@
+Use cases - Building & HVAC
+
+Building.csv has the details of each Building and its Country details. 
+HVAC.csv has the TargetTemp and ActualTemp for each building recorded at different time and date.
+
+We have to find the 2 Countries which has the most 'High Temperature Differences (TargetTemp-ActualTemp >5 or <-5)' recorded in their Buildings. 
+================================================================================================================================================
+
+
+--to update python version
+export PYSPARK_PYTHON=/usr/bin/python3
+export PYSPARK_DRIVER_PYTHON=/usr/bin/python3
+
+pyspark --to start python shell
+
+from pyspark import SQLContext
+sqlctx = SQLContext(sc) 
+
+>>> df_build = sqlctx.read.format("csv").option("header","true").option("delimiter",",").option("inferSchema","true").load("/home/hadoop/Lino/building.csv")
+
+>>> df_build.registerTempTable("building")  
+                                    
+>>> sqlctx.sql("select count(*) from building").show()
++--------+
+|count(1)|
++--------+
+|      20|
++--------+
+
+>>> sqlctx.sql("select * from building limit 5 ").show()
++----------+-----------+-----------+-----------+---------+
+|BuildingID|BuildingMgr|BuildingAge|HVACproduct|  Country|
++----------+-----------+-----------+-----------+---------+
+|         1|         M1|         25|     AC1000|      USA|
+|         2|         M2|         27|     FN39TG|   France|
+|         3|         M3|         28|     JDNS77|   Brazil|
+|         4|         M4|         17|     GG1919|  Finland|
+|         5|         M5|          3|    ACMAX22|Hong Kong|
++----------+-----------+-----------+-----------+---------+
+
+df_HVAC = sqlctx.read.format("csv").option("header","true").option("delimiter",",").option("inferSchema","true").load("/home/hadoop/Lino/HVAC.csv")
+
+df_HVAC.registerTempTable("HVAC")
+
+>>> sqlctx.sql("select count(*) from HVAC").show()
++--------+
+|count(1)|
++--------+
+|    8000|
++--------+
+
+
+
+sqlctx.sql("select count(HVAC.BuildingID), Country from HVAC join building on HVAC.BuildingID = building.BuildingID where TargetTemp-ActualTemp > 5 or TargetTemp-ActualTemp<-5 group by Country order by count(HVAC.BuildingID) desc limit 2").show
++-----------------+---------+                                                   
+|count(BuildingID)|  Country|
++-----------------+---------+
+|              473|  Finland|
+|              251|   France|
++-----------------+---------+
+
+------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+

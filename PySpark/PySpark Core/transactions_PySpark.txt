@@ -1,14 +1,23 @@
+------------------------these are few examples based on transactions.txt-----------------------------------------------------------------
+
+
 --it's a bad practice to use collect (esp. on big files). collect is used here for learning purposes only.
 
-Spark version 2.3.0, Python version 3.4.3+
+--to use python3
+export PYSPARK_PYTHON=/usr/bin/python3
+export PYSPARK_DRIVER_PYTHON=/usr/bin/python3
+
+pyspark --to open pyspark session
+
+--Spark version used here is 2.3.0 and Python version 3.4.3+
 
 a = sc.textFile("/home/hadoop/Python--Hadoop/Assign2/transactions") --this is an LFS location
 --a is RDD
 
+
 ---------------------Action Commands ----------------------------------
 >>> a.collect()
 ['0001,01-20-2013,400100,100,Exercise & Fitness,clarksville,credit', '0002,02-22-2013,400100,2000,Exercise & Fitness,clarksville,credit', '0003,03-07-2013,400212,300,Exercise & Fitness,long beach,cash', '0005,05-11-2013,400104,450,Exercise & Fitness,clarksville,cash', '0007,03-15-2013,400212,1374,Outdoor Recreation,charleston,credit', '0008,04-08-2013,400327,415,Water Sports,columbus,credit', '0010,11-19-2013,400978,421,Team Sports,Petersburg,credit', '0011,11-09-2013,400743,279,Combat sports,Reno,credit', '0012,12-23-2013,400743,123,Jumping,columbus,cash', '0013,12-27-2013,400527,500,Water Sports,columbus,credit', '0014,07-14-2013,400743,212,Exercise & Fitness,Honolulu,credit', '0016,08-30-2013,400078,103,Water Sports,Honolulu,credit', '0017,09-29-2013,400428,20,Gymnastics,Columbia,cash', '0018,06-13-2013,400428,234,Exercise & Fitness,Omaha,credit', '0019,05-21-2013,400675,120,Team Sports,Petersburg,cash', '0020,02-12-2013,400428,200,puzzles,New York,credit']
-
 
 >>> a.foreach(print)
 0001,01-20-2013,400100,100,Exercise & Fitness,clarksville,credit
@@ -38,6 +47,12 @@ a.map(lambda x:x.split(",")).collect()
 a.map(lambda x:x.split(",")).collect()[-1]
 ['0020', '02-12-2013', '400428', '200', 'puzzles', 'New York', 'credit']
 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+--taking the sum of transactions by payment type
+
 a.map(lambda x:x.split(",")).map(lambda x: (x[6],int(x[3]))).collect()
 [('credit', 100), ('credit', 2000), ('cash', 300), ('cash', 450), ('credit', 1374), ('credit', 415), ('credit', 421), ('credit', 279), ('cash', 123), ('credit', 500), ('credit', 212), ('credit', 103), ('cash', 20), ('credit', 234), ('cash', 120), ('credit', 200)]
 
@@ -49,6 +64,11 @@ a.map(lambda x:x.split(",")).map(lambda x: (x[6],int(x[3]))).groupByKey().collec
 >>>tran3.collect()
 [('cash', 1013), ('credit', 5838)]
 
+
+
+
+--filtering out only cash transactions
+
 a.map(lambda x: x.split(",")).map(lambda x: (x[6],int(x[3]))).filter(lambda x:x[0]=="cash").collect()
 [('cash', 300), ('cash', 450), ('cash', 123), ('cash', 20), ('cash', 120)]
 
@@ -56,6 +76,10 @@ a.map(lambda x: x.split(",")).map(lambda x: (x[6],int(x[3]))).filter(lambda x:x[
 >>> a.map(lambda x: x.split(",")).map(lambda x: (x[6],int(x[3]))).filter(lambda x:x[0]=="cash").collect()[-1]
 ('cash', 120)
 
+
+
+
+--sum of cash and credit transactions
 a.map(lambda x: x.split(",")).map(lambda x: (x[6],int(x[3]))).filter(lambda x:x[0]=="cash").count()
 5
 
@@ -143,21 +167,27 @@ a.map(lambda x:x.split(",")).map(lambda x: (x[5],int(x[3]))).reduceByKey(lambda 
 >>> a.map(lambda x:x.split(",")).map(lambda x:(x[4],int(x[3]))).collect()
 [('Exercise & Fitness', 100), ('Exercise & Fitness', 2000), ('Exercise & Fitness', 300), ('Exercise & Fitness', 450), ('Outdoor Recreation', 1374), ('Water Sports', 415), ('Team Sports', 421), ('Combat sports', 279), ('Jumping', 123), ('Water Sports', 500), ('Exercise & Fitness', 212), ('Water Sports', 103), ('Gymnastics', 20), ('Exercise & Fitness', 234), ('Team Sports', 120), ('puzzles', 200)]
 
-a.map(lambda x:x.split(",")).map(lambda x:(x[4],int(x[3]))).reduceByKey(lambda x,y:x+y).sortBy(lambda x:x[1]).collect()
-[('Gymnastics', 20), ('Jumping', 123), ('puzzles', 200), ('Combat sports', 279), ('Team Sports', 541), ('Water Sports', 1018), ('Outdoor Recreation', 1374), ('Exercise & Fitness', 3296)]
+>>> category_amt= a.map(lambda x:x.split(",")).map(lambda x:(x[4],int(x[3]))).reduceByKey(lambda x,y:x+y)
 
->>> a.map(lambda x:x.split(",")).map(lambda x:(x[4],int(x[3]))).reduceByKey(lambda x,y:x+y).sortBy(lambda x:x[1],False).map(lambda x:x[0]).take(2)
+>>> category_amt.collect()
+[('Water Sports', 1018), ('Gymnastics', 20), ('Outdoor Recreation', 1374), ('puzzles', 200), ('Exercise & Fitness', 3296), ('Combat sports', 279), ('Team Sports', 541), ('Jumping', 123)]
+
+>>> category_amt_sorted = category_amt.sortBy(lambda x:x[1],False)
+
+>>> category_amt_sorted.collect()
+[('Exercise & Fitness', 3296), ('Outdoor Recreation', 1374), ('Water Sports', 1018), ('Team Sports', 541), ('Combat sports', 279), ('puzzles', 200), ('Jumping', 123), ('Gymnastics', 20)]
+
+>>> top2categories = category_amt_sorted.map(lambda x:x[0]).take(2)
+
+>>> top2categories
 ['Exercise & Fitness', 'Outdoor Recreation']
-
 
 
 
 
 --saving the result to a text file in LFS
 
->>> categories = a.map(lambda x:x.split(",")).map(lambda x:(x[4],int(x[3]))).reduceByKey(lambda x,y:x+y).sortBy(lambda x:x[1],False).map(lambda x:x[0]).take(2)
-
->>> sc.parallelize(categories).saveAsTextFile("dirName") --file is saved in LFS at - /home/hadoop/dirName/part-00000
+>>> sc.parallelize(top2categories).saveAsTextFile("dirName") --file is saved in LFS at - /home/hadoop/dirName/part-00000
 =======================================================================================================================================================================================
 
 
